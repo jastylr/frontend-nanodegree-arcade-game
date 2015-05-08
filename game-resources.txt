@@ -1,0 +1,4 @@
+HTML5 Game Resources
+
+http://jlongster.com/Making-Sprite-based-Games-with-Canvas
+http://blog.sklambert.com/

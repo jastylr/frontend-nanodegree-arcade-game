@@ -68,16 +68,20 @@ var Engine = (function(global) {
     function init() {
          // Setup an event listeners on the Start and Play Again buttons
         document.getElementById('start-btn').addEventListener('click', function() {
-            startGame();
+            playGame();
+        });
+
+        document.getElementById('startover-btn').addEventListener('click', function() {
+            reset();
+            startMenu();
         });
 
         document.getElementById('play-again').addEventListener('click', function() {
             reset();
         });
 
-        reset();
-        lastTime = Date.now();
-        main();
+        //reset();
+        startMenu();
     }
 
     /* This function is called by main (our game loop) and itself calls all
@@ -90,8 +94,10 @@ var Engine = (function(global) {
      * on the entities themselves within your app.js file).
      */
     function update(dt) {
-        updateEntities(dt);
-        // checkCollisions();
+        if (!gameOver) {
+            updateEntities(dt);
+            // checkCollisions();
+        }
     }
 
     /* This is called by the update function  and loops through all of the
@@ -106,10 +112,10 @@ var Engine = (function(global) {
             enemy.update(dt);
         });
 
-        // See if the player has reached the end of the stage
+        // See if the player has lost all their lives
         // and if not, then update the player otherwise call
         // the endGame function to end the game
-        if (!player.stageComplete) {
+        if (player.numLives !== 0) {
             player.update();
         }
         else {
@@ -168,13 +174,15 @@ var Engine = (function(global) {
         /* Loop through all of the objects within the allEnemies array and call
          * the render function you have defined.
          */
-        if (!gameOver) {
-            allEnemies.forEach(function(enemy) {
-                enemy.render();
-            });
+        allCollectibles.forEach(function(collectible) {
+            collectible.render();
+        });
 
-            player.render();
-        }
+        allEnemies.forEach(function(enemy) {
+            enemy.render();
+        });
+
+        player.render();
     }
 
     /* This function does nothing but it could have been a good place to
@@ -184,29 +192,48 @@ var Engine = (function(global) {
     function reset() {
         gameOver = false;
         score = 0
-        document.getElementById('game-over').style.display = 'none';
-        document.getElementById('game-over-overlay').style.display = 'none';
+        hide(document.getElementById('game-over'));
+        hide(document.getElementById('overlay'));
+        hide(document.getElementById('game-start'));
+        hide(document.getElementById('overlay'));
+        show(document.getElementById('stats'));
         
         // Tell the Player to reset also
-        player.reset();
+        player.reset(true);
     }
 
-    /* This function is called to start game and display a 
+    /* This function is called to display the Start menu and 
      * game player selection overlay
      */
-    function startGame() {
-        gameOver = false;
-        document.getElementById('game-over').style.display = 'block';
-        document.getElementById('game-over-overlay').style.display = 'block';
+    function startMenu() {
+        show(document.getElementById('game-start'));
+        show(document.getElementById('overlay'));
+        hide(document.getElementById('stats'));
+    }
+
+    function playGame() {
+        reset();
+
+        lastTime = Date.now();
+        main();
     }
 
     /* This function is called to end the current game and display a 
      * game over overlay
      */
     function endGame() {
-        gameOver = false;
-        document.getElementById('game-over').style.display = 'block';
-        document.getElementById('game-over-overlay').style.display = 'block';
+        gameOver = true;
+        hide(document.getElementById('stats'));
+        show(document.getElementById('game-over'));
+        show(document.getElementById('overlay'));
+    }
+
+    function show(element) {
+        element.style.display = 'block';
+    }
+
+    function hide(element) {
+        element.style.display = 'none';
     }
 
     /* Go ahead and load all of the images we know we're going to need to
@@ -214,15 +241,11 @@ var Engine = (function(global) {
      * all of these images are properly loaded our game will start.
      */
     Resources.load([
+        'images/characters.png',
         'images/stone-block.png',
         'images/water-block.png',
         'images/grass-block.png',
         'images/enemy-bug.png',
-        'images/char-boy.png',
-        'images/char-cat-girl.png',
-        'images/char-horn-girl.png',
-        'images/char-pink-girl.png',
-        'images/char-princess-girl.png',
         'images/Gem Blue.png',
         'images/Gem Green.png',
         'images/Gem Orange.png',
@@ -238,8 +261,4 @@ var Engine = (function(global) {
      */
     global.ctx = ctx;
 
-    return {
-        startGame: startGame,
-        endGame: endGame
-    }
 })(this);

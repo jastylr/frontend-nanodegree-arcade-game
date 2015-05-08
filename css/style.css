@@ -1,36 +1,175 @@
+*, *:before, *:after {
+  box-sizing: border-box;
+}
+
 body {
-    text-align: center;
+  text-align: center;
 }
 
-#game-over, #game-over-overlay {
-    margin: auto;
-    width: 505px;
-    height: 606px;
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 1;
-    display: none;
+.clearfix {
+	overflow: auto;
 }
 
-#game-over-overlay {
-    background-color: black;
-    opacity: .5;
+#overlay,
+#game-over, 
+#game-start {
+	margin: auto;
+  width: 505px;
+  height: 606px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  display: none;
 }
 
-#game-over {
-    height: 200px;
-    text-align: center;
-    color: white;
+#overlay {
+  /*background-color: black;
+  opacity: .5;*/
+  background: url(../images/background.jpg) no-repeat 0 0;
 }
 
-#game-over h1 {
-    font-size: 3em;
-    font-family: sans-serif;
+#game-over,
+#game-start {
+	padding-top: 60px;
+  text-align: center;
+  color: white;
 }
 
-#game-over button {
-    font-size: 1.5em;
+#stats {
+	margin: auto;
+  width: 505px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  display: none;
 }
+
+#score, #lives {
+	display: inline-block;
+	font-size: 1.5em;
+	font-weight: bold;
+	vertical-align: top;
+	width: 49%;
+}
+
+#start-btn,
+#play-again,
+#startover-btn {
+	background: none repeat scroll 0 0 transparent;
+	border: 3px solid #fff;
+	-webkit-border-radius: 24px;
+	-moz-border-radius: 24px;
+	border-radius: 24px;
+	color: #fff;
+	cursor: pointer;
+	font-size: 28px;
+	padding: 4px 8px;
+	min-width: 140px;
+	text-shadow: 2px 2px rgba(0, 0, 0, 0.5);
+	text-transform: uppercase;
+}
+
+#start-btn:hover {
+	color: green;
+	border-color: green;
+}
+
+h1 {
+	font-size: 48px;
+}
+
+h2 {
+	font-size: 24px;
+	margin: 0;
+}
+
+h1, h2 {
+  text-shadow: 2px 2px rgba(0, 0, 0, 0.7);
+}
+
+#overlay button {
+  font-size: 1.5em;
+}
+
+#player-wrapper {
+	margin-bottom: 25px;
+  position: relative;
+  top: -10px;
+}
+
+#player-wrapper ul {
+	list-style-type: none;
+	margin: 0;
+	padding: 0;
+}
+
+#player-wrapper ul li {
+	float: left;
+}
+
+#player-wrapper button {
+	background: url(../images/characters.png) no-repeat 0 0;
+	border: none;
+	cursor: pointer;
+	width: 101px;
+	height: 171px;
+
+	-moz-transition: all .5s;
+	-webkit-transition: all .5s;
+	transition: all .5s;
+}
+
+#player-wrapper button[id="1"] {
+	background-position: 0 0;
+}
+
+#player-wrapper button[id="1"]:hover,
+#player-wrapper button[id="1"].active {
+	background-position: 0 -171px;
+}
+
+#player-wrapper button[id="2"] {
+	background-position: -101px 0;
+}
+
+#player-wrapper button[id="2"]:hover,
+#player-wrapper button[id="2"].active {
+	background-position: -101px -171px;
+}
+
+#player-wrapper button[id="3"] {
+	background-position: -202px 0;
+}
+
+#player-wrapper button[id="3"]:hover,
+#player-wrapper button[id="3"].active {
+	background-position: -202px -171px;
+}
+
+#player-wrapper button[id="4"] {
+	background-position: -303px 0;
+}
+
+#player-wrapper button[id="4"]:hover,
+#player-wrapper button[id="4"].active {
+	background-position: -303px -171px;
+}
+
+#player-wrapper button[id="5"] {
+	background-position: -404px 0;
+}
+
+#player-wrapper button[id="5"]:hover,
+#player-wrapper button[id="5"].active {
+	background-position: -404px -171px;
+}
+
+
+
+
