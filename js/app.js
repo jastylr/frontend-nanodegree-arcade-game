@@ -19,9 +19,7 @@ var Enemy = function(posX, posY) {
     this.offsetBottom = 28;
     this.speed = 0;
 
-    // The image/sprite for our enemies, this uses
-    // a helper we've provided to easily load images
-    //this.sprite = 'images/enemy-bug.png';
+    // All images are now contained in a single PNG
     this.sprite = 'images/sprite-sheet.png';
 }
 
@@ -113,8 +111,8 @@ Player.prototype.initalizeCharacters = function() {
     for (var i = 0; i < this.numCharacters; i++) {
         this.allCharacters[i] = {
             id: i + 1,
-            sourceX: i * this.width,
-            sourceY: 0
+            srcX: i * this.width,
+            srcY: 0
         };
     }
 
@@ -177,8 +175,8 @@ Player.prototype.render = function() {
     // Using a sprite sheet here so we use the version
     // of drawImage that takes a source x and y value
     ctx.drawImage(Resources.get(this.sprite), 
-        this.selectedCharacter.sourceX, 
-        this.selectedCharacter.sourceY, 
+        this.selectedCharacter.srcX, 
+        this.selectedCharacter.srcY, 
         this.width, 
         this.height, 
         this.x, 
