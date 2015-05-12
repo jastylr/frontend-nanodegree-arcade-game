@@ -25,7 +25,18 @@ var Engine = (function(global) {
         canvas = doc.createElement('canvas'),
         ctx = canvas.getContext('2d'),
         lastTime,
-        gameOver = false;
+        gameOver = false,
+        // Add shim so that requestAnimationFrame works on all browsers
+        requestAnimFrame = (function(){
+            return window.requestAnimationFrame       ||
+                window.webkitRequestAnimationFrame ||
+                window.mozRequestAnimationFrame    ||
+                window.oRequestAnimationFrame      ||
+                window.msRequestAnimationFrame     ||
+                function(callback){
+                    window.setTimeout(callback, 1000 / 60);
+                };
+        })();
 
     canvas.width = 505;
     canvas.height = 606;
@@ -108,15 +119,20 @@ var Engine = (function(global) {
      * render methods.
      */
     function updateEntities(dt) {
-        allEnemies.forEach(function(enemy) {
-            enemy.update(dt);
-        });
-
         // See if the player has lost all their lives
         // and if not, then update the player otherwise call
         // the endGame function to end the game
         if (player.numLives !== 0) {
+            
+            allEnemies.forEach(function(enemy) {
+                enemy.update(dt);
+            });
+
             player.update();
+
+            Collectible.allCollectibles.forEach(function(collectible) {
+                collectible.update();
+            });
         }
         else {
             endGame();
@@ -174,7 +190,7 @@ var Engine = (function(global) {
         /* Loop through all of the objects within the allEnemies array and call
          * the render function you have defined.
          */
-        allCollectibles.forEach(function(collectible) {
+        Collectible.allCollectibles.forEach(function(collectible) {
             collectible.render();
         });
 
@@ -241,17 +257,10 @@ var Engine = (function(global) {
      * all of these images are properly loaded our game will start.
      */
     Resources.load([
-        'images/characters.png',
+        'images/sprite-sheet.png',
         'images/stone-block.png',
         'images/water-block.png',
-        'images/grass-block.png',
-        'images/enemy-bug.png',
-        'images/Gem Blue.png',
-        'images/Gem Green.png',
-        'images/Gem Orange.png',
-        'images/Heart.png',
-        'images/Key.png',
-        'images/Star.png'
+        'images/grass-block.png'
     ]);
     Resources.onReady(init);
 

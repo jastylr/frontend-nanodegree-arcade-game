@@ -114,15 +114,15 @@ h1, h2 {
 }
 
 #player-wrapper button {
-	background: url(../images/characters.png) no-repeat 0 0;
+	background: url(../images/sprite-sheet.png) no-repeat 0 0;
 	border: none;
 	cursor: pointer;
 	width: 101px;
 	height: 171px;
 
-	-moz-transition: all .5s;
-	-webkit-transition: all .5s;
-	transition: all .5s;
+	-moz-transition: all .3s;
+	-webkit-transition: all .3s;
+	transition: all .3s;
 }
 
 #player-wrapper button[id="1"] {

@@ -5,19 +5,24 @@ var Enemy = function(posX, posY) {
     // we've provided one for you to get started
     this.x = posX;
     this.y = posY;
+    this.srcX = 0;
+    this.srcY = 513;
     this.width = 101;
     this.height = 171;
+    
     // Keep track of offsets in the image
-    // for collision detection
+    // for collision detection. There is a bunch of white
+    // space around each PNG
     this.offsetLeft = 2;
     this.offsetRight = 3;
     this.offsetTop = 78;
     this.offsetBottom = 28;
-    this.speed = Math.floor(Math.random() * (300 - 100 + 1) + 100);
+    this.speed = 0;
 
     // The image/sprite for our enemies, this uses
     // a helper we've provided to easily load images
-    this.sprite = 'images/enemy-bug.png';
+    //this.sprite = 'images/enemy-bug.png';
+    this.sprite = 'images/sprite-sheet.png';
 }
 
 // Update the enemy's position, required method for game
@@ -28,16 +33,18 @@ Enemy.prototype.update = function(dt) {
     // which will ensure the game runs at the same speed for
     // all computers.
     this.x += this.speed * dt;
+    
     // Once the enemy reaches the far right bounds, reset it's x position
     if (this.x > 505) {
         this.x = -101;
     }
 
+    // Check to see if we hit the player
     this.checkCollisions();
 }
 
 Enemy.prototype.setRandomSpeed = function(minSpeed, maxSpeed) {
-    this.speed = Math.floor(Math.random() * (max - min + 1)) + min;
+    this.speed = Math.floor(Math.random() * (maxSpeed - minSpeed + 1)) + minSpeed;
 }
 
 Enemy.prototype.checkCollisions = function() {
@@ -50,26 +57,36 @@ Enemy.prototype.checkCollisions = function() {
 
         // Reset the player position, deduct a life and decrement the score
         player.numLives--;
-        player.score -= 10;
+        player.score -= 25;
         player.reset(false);
     }
 }
 
 // Draw the enemy on the screen, required method for game
 Enemy.prototype.render = function() {
-    ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
+    ctx.drawImage(Resources.get(this.sprite), 
+        this.srcX, 
+        this.srcY, 
+        this.width, 
+        this.height, 
+        this.x, 
+        this.y, 
+        this.width, 
+        this.height);
 }
 
 // Now write your own player class
 // This class requires an update(), render() and
 // a handleInput() method.
 var Player = function() {
-    this.sprite = 'images/characters.png';
+    this.sprite = 'images/sprite-sheet.png';
     this.numCharacters = 5;
     this.allCharacters = [];
     this.selectedCharacter = {};
     this.width = 101;
     this.height = 171;
+    this.speed = 1;
+
     // Keep track of offsets in the image
     // for collision detection
     this.offsetLeft = 17;
@@ -78,7 +95,6 @@ var Player = function() {
     this.offsetBottom = 32;
 
     this.numLives = 3;
-    this.stageComplete = false;
     this.score = 0;
 }
 
@@ -150,6 +166,9 @@ Player.prototype.update = function(dt) {
         this.y = 606 - this.height - 20;
     }
     else if (this.y <= 0) {
+        // update the score and send the player
+        // back to the bottom of the board
+        this.score += 100;
         player.reset(false);
     }
 }
@@ -166,6 +185,10 @@ Player.prototype.render = function() {
         this.y, 
         this.width, 
         this.height);
+
+    // Update the score and lives
+    document.getElementById('score').innerHTML = "Score: " + this.score;
+    document.getElementById('lives').innerHTML = "Lives: " + this.numLives;
 }
 
 Player.prototype.reset = function(resetLives) {
@@ -201,23 +224,53 @@ Player.prototype.handleInput = function(key) {
     else if (key === 'down') {
         this.y += distanceY;
     }
-
 }
 
+
+/* 
+ * Collectible class - used to place collectibles on the board
+ */
 var Collectible = function(id, srcX, srcY, points) {
-    this.sprite = 'images/characters.png';
+
+    this.sprite = 'images/sprite-sheet.png';
     this.id = id;
     this.srcX = srcX;
     this.srcY = srcY;
     this.width = 101;
     this.height = 171;
     this.points = points;
+    this.collected = false;
+    
+    // Keep track of offsets in the image
+    // for collision detection
+    this.offsetLeft = 17;
+    this.offsetRight = 17;
+    this.offsetTop = 64;
+    this.offsetBottom = 32;
+
 }
+
+// Setup a static properties and methods
+// Initialize the number of collectibles retrieved
+Collectible.numCollected = 0;
+// Setup static array of all collectibles
+Collectible.allCollectibles = [];
+// Reset all collectibles so that they can be redrawn on
+// the screen once they've all been collected
+Collectible.reset = function() {
+    for (var i=0; i<Collectible.allCollectibles.length; i++) {
+        Collectible.allCollectibles[i].setRandomPos();
+        Collectible.allCollectibles[i].collected = false;        
+    }    
+    // Reset the number collected
+    Collectible.numCollected = 0;
+}
+
 
 Collectible.prototype.setRandomPos = function() {
     // Math.floor(Math.random() * (UpperRange - LowerRange + 1)) + LowerRange;
-    var randRow = Math.floor(Math.random() * (3 - 1 + 1)) + 1;
-    var randCol = Math.floor(Math.random() * (4 - 0 + 1));
+    var randRow = Math.floor(Math.random() *  (3 + 1 - 1)) + 1; 
+    var randCol = Math.floor(Math.random() *  (4 + 1 - 0)) + 0;
     
     this.x = randCol * this.width;
     this.y = randRow * this.height - 98;
@@ -237,6 +290,47 @@ Collectible.prototype.render = function() {
         this.height);
 }
 
+Collectible.prototype.update = function() {
+    
+    if (Collectible.numCollected === 5) {
+        // All collectibles have been retrieved so
+        // call reset() to redraw them at new locations
+        Collectible.reset();
+        
+    }
+    else {
+        // If a collectible has been retrieved, move it
+        // off screen. 
+        // TODO - Perhaps use separate canvas for collectibles
+        // and clear them from the canvas when collected?
+        if (this.collected === true) {
+            this.x = -101;
+            this.y = -171;
+        }
+        else {
+            // There are still collectibles on the board so
+            // check for retrieval
+            this.checkCollected();
+        }
+    }
+}
+
+Collectible.prototype.checkCollected = function() {
+    if ((player.x + player.offsetLeft) < this.x + (this.width - this.offsetRight)  && 
+        player.x + (player.width - player.offsetRight)  > (this.x + this.offsetLeft) &&
+        (player.y + player.offsetTop) < this.y + (this.height - this.offsetBottom) && 
+        player.y + (player.height - player.offsetBottom) > (this.y + this.offsetTop)) {
+
+        // Update the score and deduct from all collectibles
+        player.score += this.points;
+        this.collected = true;
+        Collectible.numCollected += 1;
+        console.log(Collectible.numCollected);
+    }   
+}
+
+// Now instantiate your objects.
+
 var collectibles = [
     {id: 'star', srcX: 0, srcY: 342, points: 100},
     {id: 'key', srcX: 101, srcY: 342, points: 75},
@@ -245,29 +339,27 @@ var collectibles = [
     {id: 'blue-gem', srcX: 404, srcY: 342, points: 25}
 ];
 
-var allCollectibles = [];
+// Create instances of the collectibles and add them to
+// the static allCollectibles array
 for (var i=0; i<collectibles.length; i++) {
-    allCollectibles.push(new Collectible(
-        collectibles[i].id,
-        collectibles[i].srcX,
-        collectibles[i].srcY,
-        collectibles[i].points
-    ));
+    var col = new Collectible(
+                    collectibles[i].id,
+                    collectibles[i].srcX,
+                    collectibles[i].srcY,
+                    collectibles[i].points
+                    )
+    //allCollectibles.push(col);
+    col.setRandomPos();
+    Collectible.allCollectibles.push(col);
 }
-
-for (var i=0; i<allCollectibles.length; i++) {
-
-    // Get a random row and column to place the object
-    allCollectibles[i].setRandomPos();
-}
-
-// Now instantiate your objects.
 
 // Place all enemy objects in an array called allEnemies
 // Place the player object in a variable called player
 var allEnemies = [];
 for (var i=0; i < 3; i++) {
-    allEnemies.push(new Enemy(-50, (i*84) + 62));
+    var enemy = new Enemy(-50, (i*83) + 62);
+    enemy.setRandomSpeed(400, 100);
+    allEnemies.push(enemy);
 }
 
 // Create a Player and reset it to defaults
