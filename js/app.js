@@ -58,7 +58,8 @@ Enemy.prototype.checkCollisions = function() {
         (player.y + player.offsetTop) < this.y + (this.height - this.offsetBottom) && 
         player.y + (player.height - player.offsetBottom) > (this.y + this.offsetTop)) {
 
-        // Reset the player position, deduct a life and decrement the score
+        // Reset the player position, deduct a life and decrement the score,
+        // then send the user back to the default starting position
         Enemy.blipSound.play();
         player.numLives--;
         player.score -= 25;
@@ -116,16 +117,6 @@ var Player = function() {
     var hopSound;
 
 }
-
-Player.loadAudio = (function() {
-    var audioHop = document.createElement('audio');
-    audioHop.src = 'sounds/dp_frogger_hop.mp3';
-    audioHop.loop = false;
-    audioHop.addEventListener("canplaythrough", function () {
-        Player.hopSound = audioHop;
-        console.log('Hop sound loaded...');
-    }, false);
-})();
 
 /*
  * Initialize an array of all charcters available and their source
@@ -236,6 +227,8 @@ Player.prototype.reset = function(resetLives) {
     } 
 }
 
+// handleInput - detects which key was pressed
+// and moves the player accordingly
 Player.prototype.handleInput = function(key) {
 
     var distanceX = this.width;
@@ -265,6 +258,17 @@ Player.prototype.handleInput = function(key) {
     }
 }
 
+// Static method used by all instances
+Player.loadAudio = (function() {
+    var audioHop = document.createElement('audio');
+    audioHop.src = 'sounds/dp_frogger_hop.mp3';
+    audioHop.loop = false;
+    audioHop.addEventListener("canplaythrough", function () {
+        Player.hopSound = audioHop;
+        console.log('Hop sound loaded...');
+    }, false);
+})();
+
 
 /* 
  * Collectible class - used to place collectibles on the board
@@ -293,8 +297,10 @@ var Collectible = function(id, srcX, srcY, points) {
 // Setup a static properties and methods
 // Initialize the number of collectibles retrieved
 Collectible.numCollected = 0;
+
 // Setup static array of all collectibles
 Collectible.allCollectibles = [];
+
 // Reset all collectibles so that they can be redrawn on
 // the screen once they've all been collected
 Collectible.reset = function() {
@@ -306,7 +312,8 @@ Collectible.reset = function() {
     Collectible.numCollected = 0;
 }
 
-
+// setRandomPos = Places the collectible randomly on
+// the playing board
 Collectible.prototype.setRandomPos = function() {
     // Math.floor(Math.random() * (UpperRange - LowerRange + 1)) + LowerRange;
     var randRow = Math.floor(Math.random() *  (3 + 1 - 1)) + 1; 
@@ -354,6 +361,8 @@ Collectible.prototype.update = function() {
     }
 }
 
+// checkCollected - determines if the player has retrieved a collectible
+// by doing simply rectangluar hit detection
 Collectible.prototype.checkCollected = function() {
     if ((player.x + player.offsetLeft) < this.x + (this.width - this.offsetRight)  && 
         player.x + (player.width - player.offsetRight)  > (this.x + this.offsetLeft) &&
@@ -381,6 +390,7 @@ Collectible.loadAudio = (function() {
 
 // Now instantiate your objects.
 
+// Temp array to define collectibles
 var collectibles = [
     {id: 'star', srcX: 0, srcY: 342, points: 100},
     {id: 'key', srcX: 101, srcY: 342, points: 75},
