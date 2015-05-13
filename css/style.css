@@ -170,6 +170,19 @@ h1, h2 {
 	background-position: -404px -171px;
 }
 
+#audio-ctl {
+	position: relative;
+  z-index: 100;
+}
 
-
+#audio-ctl button {
+  background: transparent url('../images/mute-off.png') no-repeat center left;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  padding-left: 28px;
+  text-align: left;
+  width: 125px;
+}
 

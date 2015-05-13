@@ -26,6 +26,10 @@ var Engine = (function(global) {
         ctx = canvas.getContext('2d'),
         lastTime,
         gameOver = false,
+        audioBkg = doc.createElement('audio'),
+        audioBkgReady = false,
+        audioStart = doc.createElement('audio'),
+        muteBtn = doc.getElementById('muteBtn'),
         // Add shim so that requestAnimationFrame works on all browsers
         requestAnimFrame = (function(){
             return window.requestAnimationFrame       ||
@@ -41,6 +45,16 @@ var Engine = (function(global) {
     canvas.width = 505;
     canvas.height = 606;
     doc.body.appendChild(canvas);
+
+    // Setup some audio files for background music
+    audioBkg.src = 'sounds/frogger.mp3';
+    audioBkg.loop = true;
+    audioBkg.addEventListener("canplaythrough", function () {
+        audioBkgReady = true;
+    }, false);
+    
+    audioStart.src = 'sounds/dp_frogger_start.mp3';
+    audioStart.loop = true;
 
     /* This function serves as the kickoff point for the game loop itself
      * and handles properly calling the update and render methods.
@@ -77,7 +91,8 @@ var Engine = (function(global) {
      * game loop.
      */
     function init() {
-         // Setup an event listeners on the Start and Play Again buttons
+
+        // Setup an event listeners on the Start and Play Again buttons
         document.getElementById('start-btn').addEventListener('click', function() {
             playGame();
         });
@@ -91,7 +106,21 @@ var Engine = (function(global) {
             reset();
         });
 
+        document.getElementById('muteBtn').addEventListener('click', function() {
+            if (audioStart.muted === false) {
+                audioStart.muted = true;
+                muteBtn.innerHTML = 'Music: OFF';
+                muteBtn.style.backgroundImage = "url(images/mute-on.png)";
+            }
+            else {
+                audioStart.muted = false;
+                muteBtn.innerHTML = 'Music: ON';
+                muteBtn.style.backgroundImage = "url(images/mute-off.png)";
+            }
+        });
+
         //reset();
+
         startMenu();
     }
 
@@ -214,8 +243,10 @@ var Engine = (function(global) {
         hide(document.getElementById('overlay'));
         show(document.getElementById('stats'));
         
-        // Tell the Player to reset also
+        // Tell the Player to reset
         player.reset(true);
+        // Reset the collectibles on the board
+        Collectible.reset();
     }
 
     /* This function is called to display the Start menu and 
@@ -225,10 +256,17 @@ var Engine = (function(global) {
         show(document.getElementById('game-start'));
         show(document.getElementById('overlay'));
         hide(document.getElementById('stats'));
+        audioStart.play();
     }
 
     function playGame() {
+        
         reset();
+
+        if (audioBkgReady) {
+            audioStart.pause();
+            audioBkg.play();
+        }
 
         lastTime = Date.now();
         main();
@@ -239,6 +277,9 @@ var Engine = (function(global) {
      */
     function endGame() {
         gameOver = true;
+        audioBkg.pause();
+        audioBkg.currentTime = 0;
+
         hide(document.getElementById('stats'));
         show(document.getElementById('game-over'));
         show(document.getElementById('overlay'));
