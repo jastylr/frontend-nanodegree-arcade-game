@@ -106,6 +106,7 @@ var Engine = (function(global) {
             reset();
         });
 
+        // This listener handles the toggle of the Mute button on the Start screen
         document.getElementById('muteBtn').addEventListener('click', function() {
             if (audioStart.muted === false) {
                 audioStart.muted = true;
@@ -164,6 +165,7 @@ var Engine = (function(global) {
             });
         }
         else {
+            // The player has lost all their lives so end the game
             endGame();
         }
     }
@@ -245,6 +247,7 @@ var Engine = (function(global) {
         
         // Tell the Player to reset
         player.reset(true);
+        
         // Reset the collectibles on the board
         Collectible.reset();
     }
@@ -263,6 +266,8 @@ var Engine = (function(global) {
         
         reset();
 
+        // Make sure the background music has loaded
+        // and then play it
         if (audioBkgReady) {
             audioStart.pause();
             audioBkg.play();

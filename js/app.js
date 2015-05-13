@@ -5,8 +5,6 @@ var Enemy = function(posX, posY) {
     // we've provided one for you to get started
     this.x = posX;
     this.y = posY;
-    this.srcX = 0;
-    this.srcY = 513;
     this.width = 101;
     this.height = 171;
     
@@ -17,12 +15,13 @@ var Enemy = function(posX, posY) {
     this.offsetRight = 3;
     this.offsetTop = 78;
     this.offsetBottom = 28;
-    this.speed = 0;
+    this.speed = 1;
 
     // All images are now contained in a single PNG
     this.sprite = 'images/sprite-sheet.png';
 
-    // Private static variable
+    // Private static variable to store sound
+    // when bug hits a player
     var blipSound;
 }
 
@@ -44,10 +43,13 @@ Enemy.prototype.update = function(dt) {
     this.checkCollisions();
 }
 
+// setRandomSpeed - function to set a random speed for an enemy
 Enemy.prototype.setRandomSpeed = function(minSpeed, maxSpeed) {
     this.speed = Math.floor(Math.random() * (maxSpeed - minSpeed + 1)) + minSpeed;
 }
 
+// checkCollisions - used to determine whether the bounding areas of an enemy and
+// a player intersect. If so, deduct a life from the player as well as some points
 Enemy.prototype.checkCollisions = function() {
     // The images have a bit of empty, transparent space around them that we
     // need to account for when testing for collisions
@@ -67,8 +69,8 @@ Enemy.prototype.checkCollisions = function() {
 // Draw the enemy on the screen, required method for game
 Enemy.prototype.render = function() {
     ctx.drawImage(Resources.get(this.sprite), 
-        this.srcX, 
-        this.srcY, 
+        0, 
+        513, 
         this.width, 
         this.height, 
         this.x, 
@@ -77,8 +79,8 @@ Enemy.prototype.render = function() {
         this.height);
 }
 
-// Static function to load audio used by all instances
-Enemy.loadAudio = function() {
+// Static function to load audio used by all enemy instances
+Enemy.loadAudio = (function() {
     var audioBlip = document.createElement('audio');
     audioBlip.src = 'sounds/dp_frogger_squash.mp3';
     audioBlip.loop = false;
@@ -86,7 +88,7 @@ Enemy.loadAudio = function() {
         Enemy.blipSound = audioBlip;
         console.log('Enemy blip sound loaded...');
     }, false);
-}
+})();
 
 
 // Now write your own player class
@@ -115,7 +117,7 @@ var Player = function() {
 
 }
 
-Player.loadAudio = function() {
+Player.loadAudio = (function() {
     var audioHop = document.createElement('audio');
     audioHop.src = 'sounds/dp_frogger_hop.mp3';
     audioHop.loop = false;
@@ -123,7 +125,7 @@ Player.loadAudio = function() {
         Player.hopSound = audioHop;
         console.log('Hop sound loaded...');
     }, false);
-}
+})();
 
 /*
  * Initialize an array of all charcters available and their source
@@ -173,7 +175,6 @@ Player.prototype.initalizeCharacters = function() {
     this.selectedCharacter = this.allCharacters[2];
     addClass(characters[2], 'active');
 
-    Player.loadAudio();
 }
 
 /*
@@ -368,7 +369,7 @@ Collectible.prototype.checkCollected = function() {
     }   
 }
 
-Collectible.loadAudio = function() {
+Collectible.loadAudio = (function() {
     var audioBlip = document.createElement('audio');
     audioBlip.src = 'sounds/dp_frogger_coin.mp3';
     audioBlip.loop = false;
@@ -376,7 +377,7 @@ Collectible.loadAudio = function() {
         Collectible.blipSound = audioBlip;
         console.log('Blip sound loaded...');
     }, false);
-}
+})();
 
 // Now instantiate your objects.
 
@@ -400,7 +401,6 @@ for (var i=0; i<collectibles.length; i++) {
     //allCollectibles.push(col);
     Collectible.allCollectibles.push(col);
     Collectible.reset();
-    Collectible.loadAudio();
 }
 
 // Place all enemy objects in an array called allEnemies
@@ -411,7 +411,6 @@ for (var i=0; i < 3; i++) {
     enemy.setRandomSpeed(400, 100);
     allEnemies.push(enemy);
 }
-Enemy.loadAudio();
 
 // Create a Player and reset it to defaults
 var player = new Player();
