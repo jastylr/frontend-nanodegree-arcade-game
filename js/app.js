@@ -82,13 +82,12 @@ Enemy.prototype.render = function() {
 
 // Static function to load audio used by all enemy instances
 Enemy.loadAudio = (function() {
+
     var audioBlip = document.createElement('audio');
     audioBlip.src = 'sounds/dp_frogger_squash.mp3';
     audioBlip.loop = false;
-    audioBlip.addEventListener("canplaythrough", function () {
-        Enemy.blipSound = audioBlip;
-        console.log('Enemy blip sound loaded...');
-    }, false);
+    Enemy.blipSound = audioBlip;
+
 })();
 
 
@@ -260,13 +259,12 @@ Player.prototype.handleInput = function(key) {
 
 // Static method used by all instances
 Player.loadAudio = (function() {
+    
     var audioHop = document.createElement('audio');
     audioHop.src = 'sounds/dp_frogger_hop.mp3';
     audioHop.loop = false;
-    audioHop.addEventListener("canplaythrough", function () {
-        Player.hopSound = audioHop;
-        console.log('Hop sound loaded...');
-    }, false);
+    Player.hopSound = audioHop;
+    
 })();
 
 
@@ -315,7 +313,7 @@ Collectible.reset = function() {
 // setRandomPos = Places the collectible randomly on
 // the playing board
 Collectible.prototype.setRandomPos = function() {
-    // Math.floor(Math.random() * (UpperRange - LowerRange + 1)) + LowerRange;
+
     var randRow = Math.floor(Math.random() *  (3 + 1 - 1)) + 1; 
     var randCol = Math.floor(Math.random() *  (4 + 1 - 0)) + 0;
     
@@ -326,6 +324,7 @@ Collectible.prototype.setRandomPos = function() {
 }
 
 Collectible.prototype.render = function() {
+    
     ctx.drawImage(Resources.get(this.sprite), 
         this.srcX, 
         this.srcY, 
@@ -364,6 +363,7 @@ Collectible.prototype.update = function() {
 // checkCollected - determines if the player has retrieved a collectible
 // by doing simply rectangluar hit detection
 Collectible.prototype.checkCollected = function() {
+    
     if ((player.x + player.offsetLeft) < this.x + (this.width - this.offsetRight)  && 
         player.x + (player.width - player.offsetRight)  > (this.x + this.offsetLeft) &&
         (player.y + player.offsetTop) < this.y + (this.height - this.offsetBottom) && 
@@ -373,19 +373,21 @@ Collectible.prototype.checkCollected = function() {
         player.score += this.points;
         this.collected = true;
         Collectible.numCollected += 1;
+         
+        Collectible.blipSound.pause();
+        Collectible.blipSound.currentTime = 0;
         Collectible.blipSound.play();
-        console.log(Collectible.numCollected);
+        console.log('Collected ' + Collectible.numCollected + ' items');
     }   
 }
 
 Collectible.loadAudio = (function() {
+    
     var audioBlip = document.createElement('audio');
     audioBlip.src = 'sounds/dp_frogger_coin.mp3';
     audioBlip.loop = false;
-    audioBlip.addEventListener("canplaythrough", function () {
-        Collectible.blipSound = audioBlip;
-        console.log('Blip sound loaded...');
-    }, false);
+    Collectible.blipSound = audioBlip;
+
 })();
 
 // Now instantiate your objects.
@@ -402,6 +404,7 @@ var collectibles = [
 // Create instances of the collectibles and add them to
 // the static allCollectibles array
 for (var i=0; i<collectibles.length; i++) {
+    
     var col = new Collectible(
                     collectibles[i].id,
                     collectibles[i].srcX,
@@ -411,15 +414,18 @@ for (var i=0; i<collectibles.length; i++) {
     //allCollectibles.push(col);
     Collectible.allCollectibles.push(col);
     Collectible.reset();
+
 }
 
 // Place all enemy objects in an array called allEnemies
 // Place the player object in a variable called player
 var allEnemies = [];
 for (var i=0; i < 3; i++) {
+    
     var enemy = new Enemy(-50, (i*83) + 62);
     enemy.setRandomSpeed(400, 100);
     allEnemies.push(enemy);
+
 }
 
 // Create a Player and reset it to defaults

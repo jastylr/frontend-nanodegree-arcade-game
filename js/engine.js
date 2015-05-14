@@ -49,6 +49,7 @@ var Engine = (function(global) {
     // Setup some audio files for background music
     audioBkg.src = 'sounds/frogger.mp3';
     audioBkg.loop = true;
+    audioBkg.volume = 0.7;
     audioBkg.addEventListener("canplaythrough", function () {
         audioBkgReady = true;
     }, false);
