@@ -85,7 +85,7 @@ var Engine = (function(global) {
          * function again as soon as the browser is able to draw another frame.
          */
         win.requestAnimationFrame(main);
-    };
+    }
 
     /* This function does some initial setup that should only occur once,
      * particularly setting the lastTime variable that is required for the
@@ -219,9 +219,10 @@ var Engine = (function(global) {
      * on your enemy and player entities within app.js
      */
     function renderEntities() {
-        /* Loop through all of the objects within the allEnemies array and call
+        /* Loop through all of the objects within the allEnemies and allCollectibles arrays and call
          * the render function you have defined.
          */
+        
         Collectible.allCollectibles.forEach(function(collectible) {
             collectible.render();
         });
