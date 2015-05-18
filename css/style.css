@@ -1,9 +1,11 @@
-*, *:before, *:after {
-  box-sizing: border-box;
+*, 
+*:before, 
+*:after {
+	box-sizing: border-box;
 }
 
 body {
-  text-align: center;
+	text-align: center;
 }
 
 .clearfix {
@@ -14,43 +16,44 @@ body {
 #game-over, 
 #game-start {
 	margin: auto;
-  width: 505px;
-  height: 606px;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 1;
-  display: none;
+	width: 505px;
+	height: 606px;
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 1;
+	display: none;
 }
 
 #overlay {
-  /*background-color: black;
-  opacity: .5;*/
-  background: url(../images/background.jpg) no-repeat 0 0;
+	/*background-color: black;
+	opacity: .5;*/
+	background: url(../images/background.jpg) no-repeat 0 0;
 }
 
 #game-over,
 #game-start {
 	padding-top: 60px;
-  text-align: center;
-  color: white;
+	text-align: center;
+	color: white;
 }
 
 #stats {
 	margin: auto;
-  width: 505px;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 1;
-  display: none;
+	width: 505px;
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 1;
+	display: none;
 }
 
-#score, #lives {
+#score, 
+#lives {
 	display: inline-block;
 	font-size: 1.5em;
 	font-weight: bold;
@@ -89,18 +92,19 @@ h2 {
 	margin: 0;
 }
 
-h1, h2 {
-  text-shadow: 2px 2px rgba(0, 0, 0, 0.7);
+h1, 
+h2 {
+	text-shadow: 2px 2px rgba(0, 0, 0, 0.7);
 }
 
 #overlay button {
-  font-size: 1.5em;
+	font-size: 1.5em;
 }
 
 #player-wrapper {
 	margin-bottom: 25px;
-  position: relative;
-  top: -10px;
+	position: relative;
+	top: -10px;
 }
 
 #player-wrapper ul {
@@ -176,17 +180,17 @@ h1, h2 {
 
 #audio-ctl {
 	position: relative;
-  z-index: 100;
+	z-index: 100;
 }
 
 #audio-ctl button {
-  background: transparent url('../images/mute-off.png') no-repeat center left;
-  border: none;
-  color: #fff;
-  cursor: pointer;
-  font-size: 14px;
-  padding-left: 28px;
-  text-align: left;
-  width: 125px;
+	background: transparent url('../images/mute-off.png') no-repeat center left;
+	border: none;
+	color: #fff;
+	cursor: pointer;
+	font-size: 14px;
+	padding-left: 28px;
+	text-align: left;
+	width: 125px;
 }
 

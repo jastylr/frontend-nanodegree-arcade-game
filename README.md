@@ -4,8 +4,10 @@ This project is a take on the classic Frogger arcade game. It was built using Ja
 
 Instructions:
 
-- **Select a character on the main screen and press the "PLAY" button to begin**
-- **Use the arrows keys to move your character up the board until you reach the water at which point you will have completed the stage, gathered points and will be returned to the bottom to keep playing.** 
+- **Open the index.html file in a web browser**
+- **Select a character on the main screen and press the "PLAY" button to begin the game**
+- **Use the arrows keys to move your character around the game board
+- **When you reach the water at which point you will have completed the stage and will be returned to the bottom to keep playing.** 
 - **Along the way, pick up various collectible objects that appear on the game board to obtain additional points.**
 	- Star - 100 points
 	- Key - 75 points
