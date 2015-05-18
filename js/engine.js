@@ -226,8 +226,9 @@ var Engine = (function(global) {
      * those sorts of things. It's only called once by the init() method.
      */
     function reset() {
+        // Update gameOver and make it false
         gameOver = false;
-        score = 0;
+        
         hide(document.getElementById('game-over'));
         hide(document.getElementById('overlay'));
         hide(document.getElementById('game-start'));
