@@ -16,6 +16,8 @@
 
 var Engine = (function(global) {
 
+    'use strict';
+
     /* Predefine the variables we'll be using within this scope,
      * create the canvas element, grab the 2D context for that canvas
      * set the canvas elements height/width and add it to the DOM.
@@ -29,18 +31,8 @@ var Engine = (function(global) {
         audioBkg = doc.createElement('audio'),
         audioBkgReady = false,
         audioStart = doc.createElement('audio'),
-        muteBtn = doc.getElementById('muteBtn'),
-        // Add shim so that requestAnimationFrame works on all browsers
-        requestAnimFrame = (function(){
-            return window.requestAnimationFrame       ||
-                window.webkitRequestAnimationFrame ||
-                window.mozRequestAnimationFrame    ||
-                window.oRequestAnimationFrame      ||
-                window.msRequestAnimationFrame     ||
-                function(callback){
-                    window.setTimeout(callback, 1000 / 60);
-                };
-        })();
+        muteBtn = doc.getElementById('muteBtn');
+        
 
     canvas.width = 505;
     canvas.height = 606;
@@ -113,15 +105,12 @@ var Engine = (function(global) {
                 audioStart.muted = true;
                 muteBtn.innerHTML = 'Music: OFF';
                 muteBtn.style.backgroundImage = "url(images/mute-on.png)";
-            }
-            else {
+            } else {
                 audioStart.muted = false;
                 muteBtn.innerHTML = 'Music: ON';
                 muteBtn.style.backgroundImage = "url(images/mute-off.png)";
             }
         });
-
-        //reset();
 
         startMenu();
     }
@@ -138,7 +127,6 @@ var Engine = (function(global) {
     function update(dt) {
         if (!gameOver) {
             updateEntities(dt);
-            // checkCollisions();
         }
     }
 
@@ -164,8 +152,7 @@ var Engine = (function(global) {
             Collectible.allCollectibles.forEach(function(collectible) {
                 collectible.update();
             });
-        }
-        else {
+        } else {
             // The player has lost all their lives so end the game
             endGame();
         }
@@ -224,14 +211,14 @@ var Engine = (function(global) {
          */
         
         Collectible.allCollectibles.forEach(function(collectible) {
-            collectible.render();
+            collectible.render(ctx);
         });
 
         allEnemies.forEach(function(enemy) {
-            enemy.render();
+            enemy.render(ctx);
         });
 
-        player.render();
+        player.render(ctx);
     }
 
     /* This function does nothing but it could have been a good place to
@@ -240,11 +227,10 @@ var Engine = (function(global) {
      */
     function reset() {
         gameOver = false;
-        score = 0
+        score = 0;
         hide(document.getElementById('game-over'));
         hide(document.getElementById('overlay'));
         hide(document.getElementById('game-start'));
-        hide(document.getElementById('overlay'));
         show(document.getElementById('stats'));
         
         // Tell the Player to reset

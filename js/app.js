@@ -1,6 +1,13 @@
+'use strict';
 
-// Enemy constructor. Takes an initial x and y position as parameters
+/**
+ * @description - Representation of an Enemy.
+ * @constructor
+ * @param posX - The initial x coordinate.
+ * @param posY - The intial y coordinate.
+ */ 
 var Enemy = function(posX, posY) {
+    
     // Variables applied to each of our instances go here,
     // we've provided one for you to get started
     this.x = posX;
@@ -20,13 +27,49 @@ var Enemy = function(posX, posY) {
     // All images are now contained in a single PNG
     this.sprite = 'images/sprite-sheet.png';
 
-    // Private static variable to store sound
-    // when bug hits a player
-    var blipSound;
 };
 
-// Update the enemy's position, required method for game
-// Parameter: dt, a time delta between ticks
+/** 
+ * Create a static player property so that the Enemy objects
+ * can detect collisions with the current player. This property is defined
+ * statically outside of the constructor and purposely does not use the prototype chain.
+ * This way the same single, static player is accessible from any enemy 
+ * instance rather than having a curPlayer property on each enemy instance
+ */
+Enemy.curPlayer = {};
+
+/**
+ * A static property to store a reference to the audio sound
+ * effect used by all enemies. This is defined as static since
+ * each enemy instance will use the same exact sound and don't
+ * need to store their own versions of the audio per instance
+ */
+Enemy.blipSound = null;
+
+/**
+ * An immediately executed static method to load the audio resource
+ * for the Enemy objects.
+ * Checks to see that the audio can be played before assigning it
+ */
+Enemy.loadAudio = (function() {
+
+    var audioBlip = document.createElement('audio');
+    audioBlip.src = 'sounds/dp_frogger_squash.mp3';
+    audioBlip.loop = false;
+
+    // Make sure the audio can be loaded and played and
+    // then assign it to our static blipSound property
+    audioBlip.addEventListener('canplaythrough', function() {
+        Enemy.blipSound = audioBlip;
+    });
+
+})();
+
+
+/** 
+ * @description - Update an enemy
+ * @param dt - delta time created in engine.js
+ */
 Enemy.prototype.update = function(dt) {
 
     // You should multiply any movement by the dt parameter
@@ -39,21 +82,28 @@ Enemy.prototype.update = function(dt) {
         this.x = -101;
     }
 
-    // Check to see if we hit the player
-    this.checkCollisions();
+    // Check to see if we hit the player by passing the static
+    // Enemy.curPlayer variable to the checkCollisions method.
+    // We use Enemy.curPlayer because this is available statically
+    // rather than per enemy instance
+    this.checkCollisions(Enemy.curPlayer);
 };
 
-/* Set a random speed for each enemy object. Takes 2 parameters,
- * minSpeed and maxSpeed which determine the minimum speed and
- * maximum speed values to randomize
+/**
+ * @description - Set the speed of an Enemy to a randon value
+ * @param minSpeed - The minimum speed allowed
+ * @param minSpeed - The maximum speed allowed
  */
 Enemy.prototype.setRandomSpeed = function(minSpeed, maxSpeed) {
     this.speed = Math.floor(Math.random() * (maxSpeed - minSpeed + 1)) + minSpeed;
 };
 
-// checkCollisions - used to determine whether the bounding areas of an enemy and
-// a player intersect. If so, deduct a life from the player as well as some points
-Enemy.prototype.checkCollisions = function() {
+/**
+ * @description - Check if an enemy collides with the player
+ * @param player - A reference to the static player instance
+ */
+Enemy.prototype.checkCollisions = function(player) {
+    
     // The images have a bit of empty, transparent space around them that we
     // need to account for when testing for collisions
     if ((player.x + player.offsetLeft) < this.x + (this.width - this.offsetRight)  && 
@@ -70,8 +120,11 @@ Enemy.prototype.checkCollisions = function() {
     }
 };
 
-// Draw the enemy on the screen, required method for game
-Enemy.prototype.render = function() {
+/**
+ * @description - Render an enemy on the canvas
+ * @param ctx - The canvas context reference
+ */
+Enemy.prototype.render = function(ctx) {
     ctx.drawImage(Resources.get(this.sprite), 
         0, 
         513, 
@@ -83,27 +136,11 @@ Enemy.prototype.render = function() {
         this.height);
 };
 
-/* An immediately executed static method to load the audio resource
- * for the Enemy objects.
- * Checks to see that the audio can be played before assigning it
- */
-Enemy.loadAudio = (function() {
 
-    var audioBlip = document.createElement('audio');
-    audioBlip.src = 'sounds/dp_frogger_squash.mp3';
-    audioBlip.loop = false;
-
-    // Make sure the audio can be loaded and played and
-    // then assign it to our static blipSound property
-    audioBlip.addEventListener('canplaythrough', function() {
-        Enemy.blipSound = audioBlip;
-    });
-})();
-
-
-// Now write your own player class
-// This class requires an update(), render() and
-// a handleInput() method.
+/**
+ * @description Representation of a Player.
+ * @constructor
+ */ 
 var Player = function() {
     this.sprite = 'images/sprite-sheet.png';
     this.numCharacters = 5;
@@ -129,7 +166,7 @@ var Player = function() {
 
 };
 
-/*
+/**
  * Initialize an array of all charcters available and their source
  * position in the sprite image as well as their ID
  */
@@ -180,7 +217,7 @@ Player.prototype.initalizeCharacters = function() {
 
 };
 
-/*
+/**
  * Save the user-selected character in the player object
  * Takes the id of the selected character as a parameter
  * which is stored in the selectedCharacter property
@@ -189,7 +226,8 @@ Player.prototype.selectCharacter = function(id) {
     this.selectedCharacter = this.allCharacters[id];
 };
 
-/* Update a player's position on the screen and checks
+/**
+ * Update a player's position on the screen and checks
  * to make sure that the player does not go out of the bounds
  * of the playing board.
  *
@@ -201,14 +239,11 @@ Player.prototype.update = function(dt) {
     
     if (this.x < 0) {
         this.x = 0;
-    }
-    else if (this.x + this.width > 505) {
+    } else if (this.x + this.width > 505) {
         this.x = 505 - this.width;
-    }
-    else if (this.y >= 606 - this.height) {
+    } else if (this.y >= 606 - this.height) {
         this.y = 606 - this.height - 20;
-    }
-    else if (this.y <= 0) {
+    } else if (this.y <= 0) {
         // update the score and send the player
         // back to the bottom of the board
         this.score += 100;
@@ -216,10 +251,11 @@ Player.prototype.update = function(dt) {
     }
 };
 
-/* Draw the player on the screen at it's current position
- * and update the score and lives text fields.
+/**
+ * @description - Render the player on the canvas
+ * @param ctx - A reference to the canvas context to draw on
  */
-Player.prototype.render = function() {
+Player.prototype.render = function(ctx) {
     // Using a sprite sheet here so we use the version
     // of drawImage that takes a source x and y value
     ctx.drawImage(Resources.get(this.sprite), 
@@ -232,12 +268,13 @@ Player.prototype.render = function() {
         this.width, 
         this.height);
 
-    // Update the score and lives
+    // Update the score and lives DOM elements
     document.getElementById('score').innerHTML = "Score: " + this.score;
     document.getElementById('lives').innerHTML = "Lives: " + this.numLives;
 };
 
-/* Reset a player's position on the screen to the starting position
+/**
+ * Reset a player's position on the screen to the starting position
  * Takes a single boolean parameter, resetLives which when equal to
  * true, will reset the players lives and score as well.
  *
@@ -247,6 +284,8 @@ Player.prototype.render = function() {
  *
  * When the resetLives parameter is provided and equates to true,
  * both the player's position and their lives and score are reset.
+ *
+ * @param resetLives - Boolean
  */
 Player.prototype.reset = function(resetLives) {
     // Set the player's x position to the center of the board
@@ -263,8 +302,10 @@ Player.prototype.reset = function(resetLives) {
     } 
 };
 
-// handleInput - detects which key was pressed
-// and moves the player accordingly
+/**
+ * @description - Detect key presses for player movement
+ * @param key - The pressed key
+ */
 Player.prototype.handleInput = function(key) {
 
     var distanceX = this.width;
@@ -275,28 +316,26 @@ Player.prototype.handleInput = function(key) {
     if (key === 'left') {
         this.x -= distanceX;
         playSound = true;
-    }
-    else if (key === 'right') {
+    } else if (key === 'right') {
         this.x += distanceX;
         playSound = true;
-    }
-    else if (key === 'up') {
+    } else if (key === 'up') {
         this.y -= distanceY;
         playSound = true;
-    }
-    else if (key === 'down') {
+    } else if (key === 'down') {
         this.y += distanceY;
         playSound = true;
     }
 
-    // If on of the expected keys is pressed,
+    // If one of the expected keys is pressed,
     // play the hop sound
     if (playSound) {
         Player.hopSound.play();
     }
 };
 
-/* An immediately executed static method to load the audio resource
+/** 
+ * An immediately executed static method to load the audio resource
  * for the Player object.
  * Checks to see that the audio can be played before assigning it
  */
@@ -310,16 +349,18 @@ Player.loadAudio = (function() {
     // to the hopSound property
     audioHop.addEventListener('canplaythrough', function() {
         Player.hopSound = audioHop;
-    }); 
+    });
+
 })();
 
 
-/* 
- * Collectible class - used to place collectibles on the board.
- *
- * Takes 4 parameters, an id, a srcX and srY which determine the
- * image positions in the sprite sheet and the number of points
- * that the collectible is worth when retrieved.
+/**
+ * @description Representation of a collectible object.
+ * @constructor
+ * @param id - ID of the collectible
+ * @param srcX - The x coordinate of the image in the sprite sheet
+ * @param srcY - The y coordinate of the image in the sprite sheet
+ * @param points - The point value of the collectible
  */
 var Collectible = function(id, srcX, srcY, points) {
 
@@ -351,7 +392,7 @@ Collectible.numCollected = 0;
 // Setup static array of all collectibles
 Collectible.allCollectibles = [];
  
-/* 
+/**
  * Static method to reset all collectibles so that they can be redrawn on
  * the screen once they've all been collected
  */
@@ -359,15 +400,15 @@ Collectible.reset = function() {
     // Loop through all the collectible objects in the static array
     // and call the setRandomPos() method and set their collected
     // property to false.
-    for (var i=0; i<Collectible.allCollectibles.length; i++) {
+    for (var i = 0; i < Collectible.allCollectibles.length; i++) {
         Collectible.allCollectibles[i].setRandomPos();
         Collectible.allCollectibles[i].collected = false;        
-    }    
+    }
     // Reset the number collected
     Collectible.numCollected = 0;
 };
  
-/* 
+/**
  * setRandomPos = Places the collectible randomly on
  * the playing board
  */
@@ -382,13 +423,13 @@ Collectible.prototype.setRandomPos = function() {
     this.x = randCol * this.width;
     this.y = randRow * this.height - 98;
 
-    console.log('x: ' + this.x + ' y: ' + this.y);
 };
 
-/* 
- * Draw the collectible image on the canvas
+/**
+ * @description - Render a collectible on the canvas
+ * @param ctx - A reference to the canvas context to draw on
  */
-Collectible.prototype.render = function() {
+Collectible.prototype.render = function(ctx) {
     
     ctx.drawImage(Resources.get(this.sprite), 
         this.srcX, 
@@ -401,7 +442,7 @@ Collectible.prototype.render = function() {
         this.height);
 };
 
-/* 
+/**
  * Determine if a collectible has been retrieved and if so,
  * update it's position to remove it off the screen and set
  * it's collected property to TRUE.
@@ -417,8 +458,7 @@ Collectible.prototype.update = function() {
         // All collectibles have been retrieved so
         // call reset() to redraw them at new locations
         Collectible.reset();
-    }
-    else {
+    } else {
         // If a collectible has been retrieved, move it
         // off screen. 
         // TODO - Perhaps use separate canvas for collectibles
@@ -426,8 +466,7 @@ Collectible.prototype.update = function() {
         if (this.collected === true) {
             this.x = -101;
             this.y = -171;
-        }
-        else {
+        } else {
             // There are still collectibles on the board so
             // check for retrieval
             this.checkCollected();
@@ -435,8 +474,9 @@ Collectible.prototype.update = function() {
     }
 };
 
-// checkCollected - determines if the player has retrieved a collectible
-// by doing simply rectangluar hit detection
+/**
+ * @description - Determine if a collectible object has been retrieved by the player
+ */
 Collectible.prototype.checkCollected = function() {
     
     if ((player.x + player.offsetLeft) < this.x + (this.width - this.offsetRight)  && 
@@ -461,7 +501,7 @@ Collectible.prototype.checkCollected = function() {
     }   
 };
 
-/* 
+/**
  * An immediately executed static method to load the audio file
  * for the Collectible class. Checks that the audio can be played
  * and assigns the file to the blipSound property
@@ -474,11 +514,12 @@ Collectible.loadAudio = (function() {
     audioBlip.addEventListener('canplaythrough', function() {
         Collectible.blipSound = audioBlip;
     });
+
 })();
 
 // Now instantiate your objects.
 
-/* 
+/**
  * Temp array to define collectibles with their image sprite
  * source x and y locations and their point values
  */
@@ -490,9 +531,11 @@ var collectibles = [
     {id: 'blue-gem', srcX: 404, srcY: 342, points: 25}
 ];
 
-// Create instances of all the collectibles and add them to
-// the static allCollectibles array
-for (var i=0; i<collectibles.length; i++) {
+/**
+ * Create instances of all the collectibles and add them to
+ * the static allCollectibles array
+ */
+for (var i = 0; i <  collectibles.length; i++) {
     
     var col = new Collectible(
                     collectibles[i].id,
@@ -510,25 +553,38 @@ for (var i=0; i<collectibles.length; i++) {
 
 }
 
-// Place all enemy objects in an array called allEnemies
-// Place the player object in a variable called player
-var allEnemies = [];
-for (var i=0; i < 3; i++) {
-    
-    var enemy = new Enemy(-50, (i*83) + 62);
-    enemy.setRandomSpeed(400, 100);
-    allEnemies.push(enemy);
-
-}
-
-// Create a Player and reset it to defaults
+/**
+ * Place all enemy objects in an array called allEnemies
+ * Place the player object in a variable called player
+ * Create a Player and reset it to defaults
+ */
 var player = new Player();
 player.initalizeCharacters();
 player.reset(true);
 
+/**
+ * Set a reference to the current player on the Enemy class
+ * as a static class variable since we only have one player which
+ * can be accessed by any enemy instance
+ */
+Enemy.curPlayer = player;
 
-// This listens for key presses and sends the keys to your
-// Player.handleInput() method. You don't need to modify this.
+/**
+ * Generate the enemies and give them an initial
+ * position and speed and add them to the allEnemies
+ * array
+ */
+var allEnemies = [];
+for (var i = 0; i < 3; i++) {  
+    var enemy = new Enemy(-50, (i*83) + 62);
+    enemy.setRandomSpeed(400, 100);
+    allEnemies.push(enemy);
+}
+
+/**
+ * This listens for key presses and sends the keys to your
+ * Player.handleInput() method. You don't need to modify this.
+ */
 document.addEventListener('keyup', function(e) {
     var allowedKeys = {
         37: 'left',
@@ -537,6 +593,7 @@ document.addEventListener('keyup', function(e) {
         40: 'down'
     };
 
+    // Call handleInput and pass the currently pressed key
     player.handleInput(allowedKeys[e.keyCode]);
 });
 
