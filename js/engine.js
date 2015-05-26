@@ -34,8 +34,8 @@ var Engine = (function(global) {
         muteBtn = doc.getElementById('muteBtn');
         
 
-    canvas.width = 505;
-    canvas.height = 606;
+    canvas.width = 808;
+    canvas.height = 664;
     doc.body.appendChild(canvas);
 
     // Setup some audio files for background music
@@ -147,6 +147,10 @@ var Engine = (function(global) {
                 enemy.update(dt);
             });
 
+            allWaterObs.forEach(function(waterob) {
+                waterob.update(dt);
+            });
+
             player.update();
 
             Collectible.allCollectibles.forEach(function(collectible) {
@@ -169,15 +173,17 @@ var Engine = (function(global) {
          * for that particular row of the game level.
          */
         var rowImages = [
-                'images/water-block.png',   // Top row is water
-                'images/stone-block.png',   // Row 1 of 3 of stone
-                'images/stone-block.png',   // Row 2 of 3 of stone
-                'images/stone-block.png',   // Row 3 of 3 of stone
-                'images/grass-block.png',   // Row 1 of 2 of grass
-                'images/grass-block.png'    // Row 2 of 2 of grass
+                'images/grass-top.png',   // Top row is grass
+                'images/water-tile.png',   // Row 1 of 3 of water
+                'images/water-tile.png',   // Row 2 of 3 of water
+                'images/water-tile.png',   // Row 3 of 3 of water
+                'images/road-top.png',   // Row 1 of 3 of road
+                'images/road-mid.png',    // Row 2 of 3 of road
+                'images/road-bottom.png',   // Row 3 of 3 of road
+                'images/grass-bottom.png'   // Bottom row is grass
             ],
-            numRows = 6,
-            numCols = 5,
+            numRows = 8,
+            numCols = 8,
             row, col;
 
         /* Loop through the number of rows and columns we've defined above
@@ -216,6 +222,14 @@ var Engine = (function(global) {
 
         allEnemies.forEach(function(enemy) {
             enemy.render(ctx);
+        });
+
+        allWaterObs.forEach(function(waterob) {
+            waterob.render(ctx);
+        });
+
+        allRocks.forEach(function(rock) {
+            rock.render(ctx);
         });
 
         player.render(ctx);
@@ -293,9 +307,12 @@ var Engine = (function(global) {
      */
     Resources.load([
         'images/sprite-sheet.png',
-        'images/stone-block.png',
-        'images/water-block.png',
-        'images/grass-block.png'
+        'images/grass-top.png',
+        'images/grass-bottom.png',
+        'images/water-tile.png',
+        'images/road-top.png',
+        'images/road-mid.png',
+        'images/road-bottom.png'
     ]);
     Resources.onReady(init);
 

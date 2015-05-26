@@ -1,42 +1,106 @@
 'use strict';
 
+// Setup some constants used throughout the code
+const COL_WIDTH = 101;
+const ROW_HEIGHT = 83;
+const NUM_ROWS = 8;
+const NUM_COLS = 8;
+const BOARD_WIDTH = NUM_COLS * COL_WIDTH;
+const BOARD_HEIGHT = NUM_ROWS * ROW_HEIGHT;
+const ROAD_HEIGHT = 64;
+const XTOL = 40;
+const YTOL = 40;
+const NUM_ENEMIES = 7;
+const ENEMY_HEIGHT = 50;
+const NUM_LIVES = 3;
+
+/**
+ * @description - Base class for all game entities.
+ * @constructor
+ * @param srcX - The x coordinate of the object's image in the sprite sheet.
+ * @param srcY - The x coordinate of the object's image in the sprite sheet.
+ * @param xPos - The x coordinate of the image on the screen.
+ * @param yPos - The y coordinate of the image on the screen.
+ * @param width - The width of the object's image.
+ * @param height - The height of the object's image.
+ */ 
+ var GameObject = function() {
+    this.sprite = 'images/sprite-sheet.png';
+    
+    // Initialize to some default values which will be overriden
+    // by inherited objects
+    this.name = 'GameObject'; // Inherited classes will have specific names
+    this.srcX = 0; // X coordinate of the image in the sprite sheet
+    this.srcY = 0; // Y coordinate of the image in the sprite sheet
+    this.x = -COL_WIDTH; // Initial X coordinate off to the left of the canvas
+    this.y = -ROW_HEIGHT; // Initial Y coordinate off to the top of the canvas
+    this.width = COL_WIDTH; // Set the initial object width to be the column width
+    this.height = ROW_HEIGHT; // Set the initial object height to the the row height
+};
+
+/**
+ * @description - Render method to display object on the canvas.
+ */ 
+GameObject.prototype.render = function(ctx) {
+    ctx.drawImage(Resources.get(this.sprite), 
+        this.srcX, 
+        this.srcY, 
+        this.width, 
+        this.height, 
+        this.x, 
+        this.y, 
+        this.width, 
+        this.height);
+};
+
+/**
+ * @description - Get the row number that the object currently resides in.
+ */
+GameObject.prototype.getRow = function() {
+    return Math.abs(Math.floor(this.y / ROW_HEIGHT));
+};
+
+
 /**
  * @description - Representation of an Enemy.
  * @constructor
- * @param posX - The initial x coordinate.
- * @param posY - The intial y coordinate.
+ * @param srcX - The x coordinate of the image in the sprite sheet.
+ * @param srcY - The y coordinate of the image in the sprite sheet.
  */ 
-var Enemy = function(posX, posY) {
+var Enemy = function(srcX, srcY) {
     
-    // Variables applied to each of our instances go here,
-    // we've provided one for you to get started
-    this.x = posX;
-    this.y = posY;
-    this.width = 101;
-    this.height = 171;
+    // Call the superclass constructor
+    GameObject.call(this);
+
+    // Generate a random row position for this enemy
+    var pos = this.getRandomPos();
+    // Save which direction the enemy is travelling in
+    this.direction = pos.direction;
     
-    // Keep track of offsets in the image
-    // for collision detection. There is a bunch of white
-    // space around each PNG
-    this.offsetLeft = 2;
-    this.offsetRight = 3;
-    this.offsetTop = 78;
-    this.offsetBottom = 28;
-    this.speed = 1;
+    // If the enemy is moving from right to left, then adjust
+    // the srcX value to grab the image just to the right
+    // of it in the sprite sheet
+    if (this.direction === 1) {
+        srcX += COL_WIDTH;
+    }
 
-    // All images are now contained in a single PNG
-    this.sprite = 'images/sprite-sheet.png';
+    // Save image sprite source location and the x and y position
+    // on the canvas
+    this.srcX = srcX;
+    this.srcY = srcY;
+    this.x = pos.x; // pos.x contains the x coordinate returned from getRandomPos()
+    this.y = pos.y; // pos.y contains the y coordinate returned from getRandomPos()
 
+    // Enemies have a different height than other game objects
+    // so override it here
+    this.height = ENEMY_HEIGHT;
+    
 };
 
-/** 
- * Create a static player property so that the Enemy objects
- * can detect collisions with the current player. This property is defined
- * statically outside of the constructor and purposely does not use the prototype chain.
- * This way the same single, static player is accessible from any enemy 
- * instance rather than having a curPlayer property on each enemy instance
- */
-Enemy.curPlayer = {};
+// Set the Enemy prototype to be the base GameObject class
+// so that it inherits the base class's properties and methods
+Enemy.prototype = Object.create(GameObject.prototype); 
+Enemy.prototype.constructor = Enemy;
 
 /**
  * A static property to store a reference to the audio sound
@@ -65,6 +129,34 @@ Enemy.loadAudio = (function() {
 
 })();
 
+/**
+ * @description - Generate a random position on the road for the enemy
+ */
+Enemy.prototype.getRandomPos = function() {
+    
+    var x,
+        direction,
+        row = Math.floor(Math.random() * 4),
+        y = (ROW_HEIGHT * 4) + (ROAD_HEIGHT * row);
+
+    // Enemies on even rows go left to right,
+    // odd rows go right to left
+    if (row % 2 === 0) { // Even row so place the object off the left side of the canvas
+        x = -COL_WIDTH;
+        direction = 0;
+    } else {
+        x = BOARD_WIDTH; // Odd row so place the object off the right side of the canvas
+        direction = 1;
+    }
+
+    // Return an object containing the 
+    // x and y positions and the direction of travel
+    return {
+        x: x,
+        y: y,
+        direction: direction
+    };
+};
 
 /** 
  * @description - Update an enemy
@@ -75,96 +167,83 @@ Enemy.prototype.update = function(dt) {
     // You should multiply any movement by the dt parameter
     // which will ensure the game runs at the same speed for
     // all computers.
-    this.x += this.speed * dt;
+
+    // Update the x position based based on the direction
+    this.x += ((this.direction === 0) ? this.speed : -this.speed) * dt;
     
-    // Once the enemy reaches the far right bounds, reset it's x position
-    if (this.x > 505) {
-        this.x = -101;
+    // Once the enemy is out of bounds, reset it's x position
+    if (this.x > BOARD_WIDTH || this.x < 0 - COL_WIDTH) {
+        this.x = (this.direction == 0) ? -COL_WIDTH : BOARD_WIDTH;
     }
 
-    // Check to see if we hit the player by passing the static
-    // Enemy.curPlayer variable to the checkCollisions method.
-    // We use Enemy.curPlayer because this is available statically
-    // rather than per enemy instance
-    this.checkCollisions(Enemy.curPlayer);
 };
 
-/**
- * @description - Set the speed of an Enemy to a randon value
- * @param minSpeed - The minimum speed allowed
- * @param minSpeed - The maximum speed allowed
- */
-Enemy.prototype.setRandomSpeed = function(minSpeed, maxSpeed) {
-    this.speed = Math.floor(Math.random() * (maxSpeed - minSpeed + 1)) + minSpeed;
-};
 
-/**
- * @description - Check if an enemy collides with the player
- * @param player - A reference to the static player instance
- */
-Enemy.prototype.checkCollisions = function(player) {
-    
-    // The images have a bit of empty, transparent space around them that we
-    // need to account for when testing for collisions
-    if ((player.x + player.offsetLeft) < this.x + (this.width - this.offsetRight)  && 
-        player.x + (player.width - player.offsetRight)  > (this.x + this.offsetLeft) &&
-        (player.y + player.offsetTop) < this.y + (this.height - this.offsetBottom) && 
-        player.y + (player.height - player.offsetBottom) > (this.y + this.offsetTop)) {
+var Car = function(srcX, srcY) {
 
-        // Reset the player position, deduct a life and decrement the score,
-        // then send the user back to the default starting position
-        Enemy.blipSound.play();
-        player.numLives--;
-        player.score -= 25;
-        player.reset(false);
-    }
-};
+    Enemy.call(this, srcX, srcY);
 
-/**
- * @description - Render an enemy on the canvas
- * @param ctx - The canvas context reference
- */
-Enemy.prototype.render = function(ctx) {
-    ctx.drawImage(Resources.get(this.sprite), 
-        0, 
-        513, 
-        this.width, 
-        this.height, 
-        this.x, 
-        this.y, 
-        this.width, 
-        this.height);
-};
+    this.speed = (Math.floor(Math.random() * 5) + 1) * 50;
+    this.points = 25; // Number of points lost if hit by this object
+
+}
+
+Car.prototype = Object.create(Enemy.prototype);
+Car.prototype.constructor = Car;
+
+var Viper = function(srcX, srcY) {
+
+    Enemy.call(this, srcX, srcY);
+    this.speed = (Math.floor(Math.random() * 5) + 1) * 100;
+    this.points = 50; // Number of points lost if hit by this object
+}
+
+Viper.prototype = Object.create(Enemy.prototype);
+Viper.prototype.constructor = Viper;
+
+var Truck = function(srcX, srcY) {
+
+    Enemy.call(this, srcX, srcY);
+    this.speed = (Math.floor(Math.random() * 5) + 1) * 30;
+    this.points = 40; // Number of points lost if hit by this object
+}
+
+Truck.prototype = Object.create(Enemy.prototype);
+Truck.prototype.constructor = Truck;
+
+var Ambulance = function(srcX, srcY) {
+
+    Enemy.call(this, srcX, srcY);
+    this.speed = (Math.floor(Math.random() * 5) + 1) * 40;
+    this.points = 80; // Number of points lost if hit by this object
+}
+
+Ambulance.prototype = Object.create(Enemy.prototype);
+Ambulance.prototype.constructor = Ambulance;
 
 
 /**
  * @description Representation of a Player.
  * @constructor
  */ 
-var Player = function() {
-    this.sprite = 'images/sprite-sheet.png';
-    this.numCharacters = 5;
-    this.allCharacters = [];
-    this.selectedCharacter = {};
-    this.width = 101;
-    this.height = 171;
+var Player = function(srcX, srcY) {
+    
+    GameObject.call(this);
+    
+    this.srcX = srcX;
+    this.srcY = srcY;
     this.speed = 1;
-
-    // Keep track of offsets in the image
-    // for collision detection
-    this.offsetLeft = 17;
-    this.offsetRight = 17;
-    this.offsetTop = 64;
-    this.offsetBottom = 32;
-
-    this.numLives = 3;
+    this.riding = false;
+    this.numLives = NUM_LIVES;
     this.score = 0;
 
     // Private variable to store the audio for
     // moving a player aroudn the screen
     var hopSound;
-
 };
+
+Player.prototype = Object.create(GameObject.prototype); 
+Player.prototype.constructor = Player;
 
 /**
  * Initialize an array of all charcters available and their source
@@ -212,18 +291,35 @@ Player.prototype.initalizeCharacters = function() {
 
     // Setup a default character and make it active
     // in case the user doesn't select one
-    this.selectedCharacter = this.allCharacters[2];
-    addClass(characters[2], 'active');
+    this.selectedCharacter = this.allCharacters[0];
+    addClass(characters[0], 'active');
 
 };
 
 /**
- * Save the user-selected character in the player object
- * Takes the id of the selected character as a parameter
- * which is stored in the selectedCharacter property
+ * @description - Get the row this player is currently on. Overriden method.
  */
-Player.prototype.selectCharacter = function(id) {
-    this.selectedCharacter = this.allCharacters[id];
+Player.prototype.getRow = function(tolerance) {
+    
+    // Account for some blank space in the player sprite when determining
+    // which row the player is currently on. Check that tolerance was
+    // provided otherwise set it to 0.
+    tolerance = typeof tolerance !== 'undefined' ? tolerance : 0;
+    
+    return Math.abs(Math.floor((this.y + tolerance) / ROW_HEIGHT));
+};
+
+/**
+ * Return whether the player is on a water row or not
+ */
+Player.prototype.isOnWater = function() {
+    
+    var row = this.getRow(YTOL);
+    if (row === 1 || row === 2 || row === 3) {
+        return (this.y <= row * ROW_HEIGHT);
+    }
+
+    return false;
 };
 
 /**
@@ -239,38 +335,68 @@ Player.prototype.update = function(dt) {
     
     if (this.x < 0) {
         this.x = 0;
-    } else if (this.x + this.width > 505) {
-        this.x = 505 - this.width;
-    } else if (this.y >= 606 - this.height) {
-        this.y = 606 - this.height - 20;
+    } else if (this.x + this.width > BOARD_WIDTH) {
+        this.x = BOARD_WIDTH - this.width;
+    } else if (this.y >= BOARD_HEIGHT - this.height) {
+        this.y = BOARD_HEIGHT - this.height;
     } else if (this.y <= 0) {
         // update the score and send the player
         // back to the bottom of the board
         this.score += 100;
         player.reset(false);
     }
+
+    this.checkCollisions(dt);
 };
 
-/**
- * @description - Render the player on the canvas
- * @param ctx - A reference to the canvas context to draw on
- */
-Player.prototype.render = function(ctx) {
-    // Using a sprite sheet here so we use the version
-    // of drawImage that takes a source x and y value
-    ctx.drawImage(Resources.get(this.sprite), 
-        this.selectedCharacter.srcX, 
-        this.selectedCharacter.srcY, 
-        this.width, 
-        this.height, 
-        this.x, 
-        this.y, 
-        this.width, 
-        this.height);
+Player.prototype.collideswith = function(obj) {
 
-    // Update the score and lives DOM elements
-    document.getElementById('score').innerHTML = "Score: " + this.score;
-    document.getElementById('lives').innerHTML = "Lives: " + this.numLives;
+    return (this.x + XTOL < obj.x + obj.width &&
+       this.x + this.width - XTOL > obj.x &&
+       this.y + YTOL < obj.y + obj.height &&
+       this.height + this.y - YTOL > obj.y);
+        
+};
+
+Player.prototype.checkCollisions = function(dt) {
+    
+    var isRiding = false,
+        i;
+
+    for (i=0; i<allEnemies.length; i++) {
+        if (this.collideswith(allEnemies[i])) {
+            Enemy.blipSound.play();
+            this.numLives--;
+            this.score -= allEnemies[i].points;
+            this.showMessage('You Were Hit by a Car! Loss of ' + allEnemies[i].points + ' points!')
+            this.reset(false);
+            break;
+        }
+    }
+
+    // If the player is on a water row, then check if we
+    // have a collision with a ridable water object. If the
+    // player is on the water but not on a ridable object,
+    // then they must be in the water which means they're dead
+    if (this.isOnWater()) {
+        for (i=0; i<allWaterObs.length; i++) {
+            if (this.collideswith(allWaterObs[i])) {
+                isRiding = true;
+                allWaterObs[i].ride(this, dt);
+                break;
+            } 
+        }
+
+        // The player missed a log or lilypad is in the water
+        // which means they're dead
+        if (!isRiding) {
+            Enemy.blipSound.play();
+            this.numLives--;
+            this.score -= 25;
+            this.showMessage('You Fell in the Water! Loss of 25 points!')
+            this.reset(false);
+        }      
+    }
 };
 
 /**
@@ -289,18 +415,51 @@ Player.prototype.render = function(ctx) {
  */
 Player.prototype.reset = function(resetLives) {
     // Set the player's x position to the center of the board
-    this.x = (505 / 2) - (this.width / 2);
+    this.x = (BOARD_WIDTH / 2) - (this.width / 2);
     // Set the player's y position to the bottom of the board
     // minus the offset of the empty space in the player image
-    this.y = 606 - this.height - 20;
+    this.y = BOARD_HEIGHT - this.height / 2;
 
     // Check if the user has any more lives and if not,
     // reset them and the score
     if (resetLives && this.numLives === 0) {
-        this.numLives = 3;
+        this.numLives = NUM_LIVES;
         this.score = 0;
     } 
 };
+
+/**
+ * Display a popup message such as when a user dies or completes a level
+ */
+Player.prototype.showMessage = function(message) {
+    console.log(message);
+
+    var canvas = document.getElementById("msgCanvas");
+    var ctx = canvas.getContext("2d");
+    var x = canvas.width / 2;
+    var y = canvas.height / 2 + 10;
+    var alpha = 1.0;   // full opacity
+    var interval;
+
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    interval = setInterval(function () {
+            canvas.width = canvas.width; // Clears the canvas
+            ctx.textAlign = 'center';
+            ctx.font = "bold 20pt Arial";
+            ctx.strokeStyle = "rgba(0, 0, 0, " + alpha + ")";
+            ctx.lineWidth = 3;
+            ctx.strokeText(message, x, y);
+            ctx.fillStyle = "rgba(255, 255, 255, " + alpha + ")";
+            ctx.fillText(message, x, y);
+            alpha = alpha - 0.05; // decrease opacity (fade out)
+            if (alpha < 0) {
+                canvas.width = canvas.width;
+                clearInterval(interval);
+            }
+        }, 150); 
+
+}
 
 /**
  * @description - Detect key presses for player movement
@@ -309,8 +468,14 @@ Player.prototype.reset = function(resetLives) {
 Player.prototype.handleInput = function(key) {
 
     var distanceX = this.width;
-    var distanceY = this.height / 2;
+    var distanceY;
     var playSound = false; 
+
+    if (this.getRow() === 4 || this.getRow() === 5 || this.getRow() === 6) {
+        distanceY = ROAD_HEIGHT;
+    } else {
+        distanceY = this.height;
+    }
     
     // See which key was pressed
     if (key === 'left') {
@@ -352,6 +517,115 @@ Player.loadAudio = (function() {
     });
 
 })();
+
+/**
+ * @description - Representation of an Log.
+ * @constructor
+ * @param posX - The initial x coordinate.
+ * @param posY - The intial y coordinate.
+ */ 
+var Log = function(srcX, srcY, row, xPos) {
+    
+    // Call the superclass constructor
+    GameObject.call(this);
+
+    this.srcX = srcX;
+    this.srcY = srcY;
+    
+    this.x = xPos;
+    this.y = (row * ROW_HEIGHT) + ROW_HEIGHT;
+    this.row = row;
+    this.direction = (this.row % 2 === 0) ? 0 : 1;
+
+    this.speed = (this.row + 1) * 100; //200;
+    
+};
+
+Log.prototype = Object.create(GameObject.prototype); 
+Log.prototype.constructor = Log;
+
+Log.prototype.update = function(dt) {
+
+    // You should multiply any movement by the dt parameter
+    // which will ensure the game runs at the same speed for
+    // all computers.
+    this.x += ((this.direction === 0) ? this.speed : -this.speed) * dt;
+    
+    // Once the log reaches either end of the board, reset it's x position
+    if (this.x > BOARD_WIDTH || this.x < 0 - COL_WIDTH) {
+        this.x = (this.direction == 0) ? -COL_WIDTH : (COL_WIDTH * NUM_COLS);
+    }
+
+};
+
+Log.prototype.ride = function(player, dt) {
+    player.riding = true;
+    player.x = this.x;
+};
+
+/**
+ * @description - Representation of a Lily Pad.
+ * @constructor
+ * @param srcX - The x coordinate of the image in the sprite sheet.
+ * @param srcY - The y coordinate of the image in the sprite sheet.
+ */ 
+var LilyPad = function(srcX, srcY, row, xPos) {
+    
+    // Call the superclass constructor
+    GameObject.call(this);
+
+    this.srcX = srcX;
+    this.srcY = srcY;
+    this.x = xPos;
+    this.y = (row * ROW_HEIGHT) + ROW_HEIGHT;
+    this.row = row;
+    this.direction = (row % 2 === 0) ? 0 : 1;
+
+    this.speed = (this.row + 1) * 100; //200;
+    
+};
+
+LilyPad.prototype = Object.create(GameObject.prototype); 
+LilyPad.prototype.constructor = LilyPad;
+
+LilyPad.prototype.update = function(dt) {
+
+    // You should multiply any movement by the dt parameter
+    // which will ensure the game runs at the same speed for
+    // all computers.
+    this.x += ((this.direction === 0) ? this.speed : -this.speed) * dt;
+    
+    // Once the log reaches either end of the board, reset it's x position
+    if (this.x > BOARD_WIDTH || this.x < 0 - COL_WIDTH) {
+        this.x = (this.direction == 0) ? -COL_WIDTH : (COL_WIDTH * NUM_COLS);
+    }
+
+};
+
+LilyPad.prototype.ride = function(player, dt) {
+    player.riding = true;
+    player.x = this.x;
+};
+
+
+/**
+ * Rock class. Rocks don't move, they just prevent
+ * a player from advancing. These will only appear
+ * on the grass rows.
+ */
+var Rock = function(srcX, srcY, row, xPos) {
+    // Call the superclass constructor
+    GameObject.call(this);
+
+    this.srcX = srcX;
+    this.srcY = srcY;
+    this.x = xPos;
+    this.y = (row * ROW_HEIGHT);
+    this.row = row;
+}
+
+Rock.prototype = Object.create(GameObject.prototype); 
+Rock.prototype.constructor = Rock;
 
 
 /**
@@ -558,16 +832,9 @@ for (var i = 0; i <  collectibles.length; i++) {
  * Place the player object in a variable called player
  * Create a Player and reset it to defaults
  */
-var player = new Player();
-player.initalizeCharacters();
+var player = new Player(0, 0);
 player.reset(true);
 
-/**
- * Set a reference to the current player on the Enemy class
- * as a static class variable since we only have one player which
- * can be accessed by any enemy instance
- */
-Enemy.curPlayer = player;
 
 /**
  * Generate the enemies and give them an initial
@@ -575,10 +842,45 @@ Enemy.curPlayer = player;
  * array
  */
 var allEnemies = [];
-for (var i = 0; i < 3; i++) {  
-    var enemy = new Enemy(-50, (i*83) + 62);
-    enemy.setRandomSpeed(400, 100);
-    allEnemies.push(enemy);
+allEnemies[0] = new Car(0, 133);
+allEnemies[1] = new Car(0, 133);
+allEnemies[2] = new Car(0, 133);
+allEnemies[3] = new Truck(0, 83);
+allEnemies[4] = new Viper(0, 183);
+allEnemies[5] = new Viper(0, 183);
+allEnemies[6] = new Ambulance(0, 233);
+allEnemies[7] = new Truck(0, 83);
+
+
+var waterMap = [
+    ['log', 'lilypad', 'space', 'lilypad', 'space', 'log', 'log', 'space'],
+    ['lilypad', 'space', 'lilypad', 'space', 'lilypad', 'space', 'lilypad', 'space'],
+    ['log', 'space', 'lilypad', 'lilypad', 'space', 'log', 'log', 'space'],
+];
+
+var allWaterObs = [];
+for (var i=0; i<waterMap.length; i++) {
+    for (var j=0; j<waterMap[i].length; j++) {
+        if (waterMap[i][j] === 'log') {
+            allWaterObs.push(new Log(202, 0, i, (j + 1) * COL_WIDTH));
+        } else if (waterMap[i][j] === 'lilypad') {
+            allWaterObs.push(new LilyPad(101, 0, i, (j + 1) * COL_WIDTH));
+        } 
+    }
+}
+
+var rockMap = [
+    [1, 0, 1, 0, 0, 0, 1, 0],
+    [0, 1, 0, 0, 0, 0, 1, 0]
+];
+
+var allRocks = [];
+for (var i=0; i<rockMap.length; i++) {
+    for (var j=0; j<rockMap[i].length; j++) {
+        if (rockMap[i][j] === 1) {
+            allRocks.push(new Rock(0, 283, (i === 0) ? 0 : 7, j * COL_WIDTH));
+        }
+    }
 }
 
 /**
