@@ -6,6 +6,7 @@
 
 body {
 	text-align: center;
+	background-color: #018501;
 }
 
 .clearfix {
@@ -16,8 +17,8 @@ body {
 #game-over, 
 #game-start {
 	margin: auto;
-	width: 505px;
-	height: 606px;
+	width: 808px;
+	height: 646px;
 	position: absolute;
 	top: 0;
 	left: 0;
@@ -30,7 +31,7 @@ body {
 #overlay {
 	/*background-color: black;
 	opacity: .5;*/
-	background: url(../images/background.jpg) no-repeat 0 0;
+	background: url(../images/splash-screen.jpg) no-repeat 0 0;
 }
 
 #game-over,
@@ -42,7 +43,7 @@ body {
 
 #stats {
 	margin: auto;
-	width: 505px;
+	width: 808px;
 	position: absolute;
 	top: 0;
 	left: 0;
@@ -76,6 +77,11 @@ body {
 	min-width: 140px;
 	text-shadow: 2px 2px rgba(0, 0, 0, 0.5);
 	text-transform: uppercase;
+}
+
+#start-btn {
+    position: relative;
+    top: 450px;
 }
 
 #start-btn:hover {
