@@ -151,6 +151,10 @@ var Engine = (function(global) {
                 waterob.update(dt);
             });
 
+            allPredators.forEach(function(predator) {
+                predator.update(dt);
+            });
+
             player.update();
 
             Collectible.allCollectibles.forEach(function(collectible) {
@@ -230,6 +234,10 @@ var Engine = (function(global) {
 
         allRocks.forEach(function(rock) {
             rock.render(ctx);
+        });
+
+        allPredators.forEach(function(predator) {
+            predator.render(ctx);
         });
 
         player.render(ctx);

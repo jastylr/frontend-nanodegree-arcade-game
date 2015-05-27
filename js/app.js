@@ -56,13 +56,19 @@ GameObject.prototype.render = function(ctx) {
 /**
  * @description - Get the row number that the object currently resides in.
  */
-GameObject.prototype.getRow = function() {
-    return Math.abs(Math.floor(this.y / ROW_HEIGHT));
+GameObject.prototype.getRow = function(tolerance) {
+    
+    // Account for some blank space in the player sprite when determining
+    // which row the player is currently on. Check that tolerance was
+    // provided otherwise set it to 0.
+    tolerance = typeof tolerance !== 'undefined' ? tolerance : 0;
+    
+    return Math.abs(Math.floor((this.y + tolerance) / ROW_HEIGHT));
 };
 
 
 /**
- * @description - Representation of an Enemy.
+ * @description - Base class representation of an Enemy.
  * @constructor
  * @param srcX - The x coordinate of the image in the sprite sheet.
  * @param srcY - The y coordinate of the image in the sprite sheet.
@@ -71,9 +77,33 @@ var Enemy = function(srcX, srcY) {
     
     // Call the superclass constructor
     GameObject.call(this);
+    
+    // Save image sprite source location and the x and y position
+    // on the canvas
+    this.srcX = srcX;
+    this.srcY = srcY;
+    
+};
+
+// Set the Enemy prototype to be the base GameObject class
+// so that it inherits the base class's properties and methods
+Enemy.prototype = Object.create(GameObject.prototype); 
+Enemy.prototype.constructor = Enemy;
+
+/**
+ * @description - Representation of a Vehicle inherited from Enemy.
+ * @constructor
+ * @param srcX - The x coordinate of the image in the sprite sheet.
+ * @param srcY - The y coordinate of the image in the sprite sheet.
+ */ 
+var Vehicle = function(srcX, srcY) {
+    
+    // Call the superclass constructor
+    Enemy.call(this);
 
     // Generate a random row position for this enemy
     var pos = this.getRandomPos();
+    
     // Save which direction the enemy is travelling in
     this.direction = pos.direction;
     
@@ -84,55 +114,28 @@ var Enemy = function(srcX, srcY) {
         srcX += COL_WIDTH;
     }
 
-    // Save image sprite source location and the x and y position
-    // on the canvas
+    // // Save image sprite source location and the x and y position
+    // // on the canvas
     this.srcX = srcX;
     this.srcY = srcY;
     this.x = pos.x; // pos.x contains the x coordinate returned from getRandomPos()
     this.y = pos.y; // pos.y contains the y coordinate returned from getRandomPos()
 
-    // Enemies have a different height than other game objects
+    // Vehicles have a different height than other game objects
     // so override it here
     this.height = ENEMY_HEIGHT;
     
 };
 
-// Set the Enemy prototype to be the base GameObject class
+// Set the Vehicle prototype to be the base Enemy class
 // so that it inherits the base class's properties and methods
-Enemy.prototype = Object.create(GameObject.prototype); 
-Enemy.prototype.constructor = Enemy;
+Vehicle.prototype = Object.create(Enemy.prototype); 
+Vehicle.prototype.constructor = Vehicle;
 
 /**
- * A static property to store a reference to the audio sound
- * effect used by all enemies. This is defined as static since
- * each enemy instance will use the same exact sound and don't
- * need to store their own versions of the audio per instance
+ * @description - Generate a random position on the road for a vehicle
  */
-Enemy.blipSound = null;
-
-/**
- * An immediately executed static method to load the audio resource
- * for the Enemy objects.
- * Checks to see that the audio can be played before assigning it
- */
-Enemy.loadAudio = (function() {
-
-    var audioBlip = document.createElement('audio');
-    audioBlip.src = 'sounds/dp_frogger_squash.mp3';
-    audioBlip.loop = false;
-
-    // Make sure the audio can be loaded and played and
-    // then assign it to our static blipSound property
-    audioBlip.addEventListener('canplaythrough', function() {
-        Enemy.blipSound = audioBlip;
-    });
-
-})();
-
-/**
- * @description - Generate a random position on the road for the enemy
- */
-Enemy.prototype.getRandomPos = function() {
+Vehicle.prototype.getRandomPos = function() {
     
     var x,
         direction,
@@ -162,7 +165,7 @@ Enemy.prototype.getRandomPos = function() {
  * @description - Update an enemy
  * @param dt - delta time created in engine.js
  */
-Enemy.prototype.update = function(dt) {
+Vehicle.prototype.update = function(dt) {
 
     // You should multiply any movement by the dt parameter
     // which will ensure the game runs at the same speed for
@@ -181,45 +184,181 @@ Enemy.prototype.update = function(dt) {
 
 var Car = function(srcX, srcY) {
 
-    Enemy.call(this, srcX, srcY);
+    Vehicle.call(this, srcX, srcY);
 
     this.speed = (Math.floor(Math.random() * 5) + 1) * 50;
     this.points = 25; // Number of points lost if hit by this object
 
-}
+};
 
-Car.prototype = Object.create(Enemy.prototype);
+Car.prototype = Object.create(Vehicle.prototype);
 Car.prototype.constructor = Car;
 
 var Viper = function(srcX, srcY) {
 
-    Enemy.call(this, srcX, srcY);
+    Vehicle.call(this, srcX, srcY);
     this.speed = (Math.floor(Math.random() * 5) + 1) * 100;
     this.points = 50; // Number of points lost if hit by this object
-}
+};
 
-Viper.prototype = Object.create(Enemy.prototype);
+Viper.prototype = Object.create(Vehicle.prototype);
 Viper.prototype.constructor = Viper;
 
 var Truck = function(srcX, srcY) {
 
-    Enemy.call(this, srcX, srcY);
+    Vehicle.call(this, srcX, srcY);
     this.speed = (Math.floor(Math.random() * 5) + 1) * 30;
     this.points = 40; // Number of points lost if hit by this object
-}
+};
 
-Truck.prototype = Object.create(Enemy.prototype);
+Truck.prototype = Object.create(Vehicle.prototype);
 Truck.prototype.constructor = Truck;
 
 var Ambulance = function(srcX, srcY) {
 
-    Enemy.call(this, srcX, srcY);
+    Vehicle.call(this, srcX, srcY);
     this.speed = (Math.floor(Math.random() * 5) + 1) * 40;
     this.points = 80; // Number of points lost if hit by this object
-}
+};
 
-Ambulance.prototype = Object.create(Enemy.prototype);
+Ambulance.prototype = Object.create(Vehicle.prototype);
 Ambulance.prototype.constructor = Ambulance;
+
+
+/** 
+ * Predator Class - an enemy that can kill the player
+ * and deduct points and lives. Predators live on the grass, on
+ * logs or on lilypads.
+ */
+var Predator = function(srcX, srcY) {
+
+    Enemy.call(this, srcX, srcY);
+
+    // Generate a random row position for this enemy
+    var pos = this.getRandomPos();
+
+    this.x = pos.x;
+    this.y = pos.y;
+    this.speed = 0;
+    this.direction = -1;
+    this.points = 10; // Intiial number of points lost if hit by this object
+};
+
+Predator.prototype = Object.create(Enemy.prototype);
+Predator.prototype.constructor = Predator;
+
+/**
+ * @description - Generate a random position for a predator
+ */
+Predator.prototype.getRandomPos = function() {
+    
+    var x, y, row, col;
+
+    // Predators are placed on any row excpet the road rows
+    var availRows = [0];
+
+    // Randomly choose from one of the available rows in the availRows array
+    row = availRows[Math.floor(Math.random() * availRows.length)];
+    col = Math.floor(Math.random() * 8);
+
+    x = col * COL_WIDTH;
+    y = row * ROW_HEIGHT;
+
+    // If the predator is on a water row, then set it's
+    // speed and direction
+    if (this.onWaterRow(row)) {
+        this.direction = (row % 2 === 0) ? 0 : 1;
+        this.speed = (row + 1) * 100;
+    }
+
+    // Return an object containing the 
+    // x and y positions and the direction of travel
+    return {
+        x: x,
+        y: y
+    };
+};
+
+Predator.prototype.onWaterRow = function(row) {
+    return (row === 1 || row === 2 || row === 3);
+};
+
+Predator.prototype.update = function(dt) {
+
+    // You should multiply any movement by the dt parameter
+    // which will ensure the game runs at the same speed for
+    // all computers.
+    this.x += ((this.direction === 0) ? this.speed : -this.speed) * dt;
+    
+    // Once the floatable reaches either end of the board, reset it's x position
+    if (this.x > BOARD_WIDTH || this.x < 0 - COL_WIDTH) {
+        this.x = (this.direction == 0) ? -COL_WIDTH : (COL_WIDTH * NUM_COLS);
+    }
+
+};
+
+/**
+ * @description - Representation of an Floatable object (Log, Lilypad etc).
+ * @constructor
+ * @param srcX - The x coordinate of the image in the sprite sheet.
+ * @param srcY - The x coordinate of the image in the sprite sheet.
+ * @param row - The row to place the object on.
+ * @param xPos - The x coordinate in the row of where to display.
+ */ 
+var Floatable = function(srcX, srcY, row, xPos) {
+    
+    // Call the superclass constructor
+    GameObject.call(this);
+
+    this.srcX = srcX;
+    this.srcY = srcY;
+    
+    this.x = xPos;
+    this.y = (row * ROW_HEIGHT) + ROW_HEIGHT;
+    this.row = row;
+    this.direction = (this.row % 2 === 0) ? 0 : 1;
+
+    this.speed = (this.row + 1) * 100;
+    this.hasPredator = false; // Does this object have a predator on it?
+    
+};
+
+Floatable.prototype = Object.create(GameObject.prototype); 
+Floatable.prototype.constructor = Floatable;
+
+Floatable.prototype.update = function(dt) {
+
+    // You should multiply any movement by the dt parameter
+    // which will ensure the game runs at the same speed for
+    // all computers.
+    this.x += ((this.direction === 0) ? this.speed : -this.speed) * dt;
+    
+    // Once the floatable reaches either end of the board, reset it's x position
+    if (this.x > BOARD_WIDTH || this.x < 0 - COL_WIDTH) {
+        this.x = (this.direction == 0) ? -COL_WIDTH : (COL_WIDTH * NUM_COLS);
+    }
+
+};
+
+Floatable.prototype.ride = function(player, dt) {
+    player.riding = true;
+    player.x = this.x;
+};
+
+Floatable.prototype.addPredator = function(predator) {
+    this.hasPredator = true;
+    predator.x = this.x;
+    predator.y = this.y;
+    predator.speed = this.speed;
+    predator.direction = this.direction;
+};
+
+Floatable.prototype.removePredator = function() {
+    if (this.hasPredator) {
+        // Remove it
+        this.hasPredator = false;
+    }
+};
 
 
 /**
@@ -237,77 +376,27 @@ var Player = function(srcX, srcY) {
     this.numLives = NUM_LIVES;
     this.score = 0;
 
-    // Private variable to store the audio for
-    // moving a player aroudn the screen
+    // Private variables to store the audio for
+    // moving a player around the screen and dying
     var hopSound;
+    var dieSound;
 };
 
 Player.prototype = Object.create(GameObject.prototype); 
 Player.prototype.constructor = Player;
 
 /**
- * Initialize an array of all charcters available and their source
- * position in the sprite image as well as their ID
- */
-Player.prototype.initalizeCharacters = function() {
-    
-    // Store this in a variable so that when setting up
-    // the callbacks, they point to the actual player
-    var player = this,
-        i;
-
-    // Build an array containing the locations in the sprite
-    // sheet of each of the characters.
-    for (i = 0; i < this.numCharacters; i++) {
-        this.allCharacters[i] = {
-            id: i + 1,
-            srcX: i * this.width,
-            srcY: 0
-        };
-    }
-
-    // Setup click event listeners on each character so we can
-    // allow the user to select their own character
-    var characters = document.querySelectorAll('.player');
-
-    for (i = 0; i < characters.length; i++) {
-        characters[i].addEventListener('click', function() {
-            
-            var allchars = document.querySelectorAll('.player');
-            
-            for (var i = 0; i < allchars.length; i++) {
-                // Remove the active class from all characters
-                // using removeClass in utils.js
-                removeClass(allchars[i], 'active');
-            }
-
-            // Add the active class to the clicked character
-            addClass(this, 'active');
-
-            // Save the selected character            
-            player.selectCharacter(this.id - 1);
-        });
-    }
-
-    // Setup a default character and make it active
-    // in case the user doesn't select one
-    this.selectedCharacter = this.allCharacters[0];
-    addClass(characters[0], 'active');
-
-};
-
-/**
  * @description - Get the row this player is currently on. Overriden method.
  */
-Player.prototype.getRow = function(tolerance) {
+// Player.prototype.getRow = function(tolerance) {
     
-    // Account for some blank space in the player sprite when determining
-    // which row the player is currently on. Check that tolerance was
-    // provided otherwise set it to 0.
-    tolerance = typeof tolerance !== 'undefined' ? tolerance : 0;
+//     // Account for some blank space in the player sprite when determining
+//     // which row the player is currently on. Check that tolerance was
+//     // provided otherwise set it to 0.
+//     tolerance = typeof tolerance !== 'undefined' ? tolerance : 0;
     
-    return Math.abs(Math.floor((this.y + tolerance) / ROW_HEIGHT));
-};
+//     return Math.abs(Math.floor((this.y + tolerance) / ROW_HEIGHT));
+// };
 
 /**
  * Return whether the player is on a water row or not
@@ -333,6 +422,8 @@ Player.prototype.isOnWater = function() {
  */
 Player.prototype.update = function(dt) {
     
+    this.checkCollisions(dt);
+
     if (this.x < 0) {
         this.x = 0;
     } else if (this.x + this.width > BOARD_WIDTH) {
@@ -345,8 +436,12 @@ Player.prototype.update = function(dt) {
         this.score += 100;
         player.reset(false);
     }
+};
 
-    this.checkCollisions(dt);
+Player.prototype.die = function() {
+    Player.dieSound.play();
+    this.numLives--;
+    this.reset(false);
 };
 
 Player.prototype.collideswith = function(obj) {
@@ -365,11 +460,9 @@ Player.prototype.checkCollisions = function(dt) {
 
     for (i=0; i<allEnemies.length; i++) {
         if (this.collideswith(allEnemies[i])) {
-            Enemy.blipSound.play();
-            this.numLives--;
             this.score -= allEnemies[i].points;
-            this.showMessage('You Were Hit by a Car! Loss of ' + allEnemies[i].points + ' points!')
-            this.reset(false);
+            this.showMessage('You Were Hit by a Car! Loss of ' + allEnemies[i].points + ' points!');
+            this.die();
             break;
         }
     }
@@ -387,15 +480,22 @@ Player.prototype.checkCollisions = function(dt) {
             } 
         }
 
-        // The player missed a log or lilypad is in the water
+        // The player isn't on a log or lilypad so they must be in the water
         // which means they're dead
         if (!isRiding) {
-            Enemy.blipSound.play();
-            this.numLives--;
             this.score -= 25;
             this.showMessage('You Fell in the Water! Loss of 25 points!')
-            this.reset(false);
+            this.die();
         }      
+    }
+
+    for (i=0; i<allPredators.length; i++) {
+        if (this.collideswith(allPredators[i])) {
+            this.score -= allPredators[i].points;
+            this.showMessage('You Were Eaten by a Predator!');
+            this.die();
+            break;
+        }
     }
 };
 
@@ -457,9 +557,9 @@ Player.prototype.showMessage = function(message) {
                 canvas.width = canvas.width;
                 clearInterval(interval);
             }
-        }, 150); 
+        }, 200); 
 
-}
+};
 
 /**
  * @description - Detect key presses for player movement
@@ -516,104 +616,25 @@ Player.loadAudio = (function() {
         Player.hopSound = audioHop;
     });
 
+    var audioDie = document.createElement('audio');
+    audioDie.src = 'sounds/dp_frogger_squash.mp3';
+    audioDie.loop = false;
+
+    // Make sure the audio can be played and then assign it
+    // to the hopSound property
+    audioDie.addEventListener('canplaythrough', function() {
+        Player.dieSound = audioDie;
+    });
+
 })();
 
-/**
- * @description - Representation of an Log.
- * @constructor
- * @param posX - The initial x coordinate.
- * @param posY - The intial y coordinate.
- */ 
-var Log = function(srcX, srcY, row, xPos) {
-    
-    // Call the superclass constructor
-    GameObject.call(this);
-
-    this.srcX = srcX;
-    this.srcY = srcY;
-    
-    this.x = xPos;
-    this.y = (row * ROW_HEIGHT) + ROW_HEIGHT;
-    this.row = row;
-    this.direction = (this.row % 2 === 0) ? 0 : 1;
-
-    this.speed = (this.row + 1) * 100; //200;
-    
-};
-
-Log.prototype = Object.create(GameObject.prototype); 
-Log.prototype.constructor = Log;
-
-Log.prototype.update = function(dt) {
-
-    // You should multiply any movement by the dt parameter
-    // which will ensure the game runs at the same speed for
-    // all computers.
-    this.x += ((this.direction === 0) ? this.speed : -this.speed) * dt;
-    
-    // Once the log reaches either end of the board, reset it's x position
-    if (this.x > BOARD_WIDTH || this.x < 0 - COL_WIDTH) {
-        this.x = (this.direction == 0) ? -COL_WIDTH : (COL_WIDTH * NUM_COLS);
-    }
-
-};
-
-Log.prototype.ride = function(player, dt) {
-    player.riding = true;
-    player.x = this.x;
-};
 
 /**
- * @description - Representation of a Lily Pad.
- * @constructor
- * @param srcX - The x coordinate of the image in the sprite sheet.
- * @param srcY - The y coordinate of the image in the sprite sheet.
- */ 
-var LilyPad = function(srcX, srcY, row, xPos) {
-    
-    // Call the superclass constructor
-    GameObject.call(this);
-
-    this.srcX = srcX;
-    this.srcY = srcY;
-    this.x = xPos;
-    this.y = (row * ROW_HEIGHT) + ROW_HEIGHT;
-    this.row = row;
-    this.direction = (row % 2 === 0) ? 0 : 1;
-
-    this.speed = (this.row + 1) * 100; //200;
-    
-};
-
-LilyPad.prototype = Object.create(GameObject.prototype); 
-LilyPad.prototype.constructor = LilyPad;
-
-LilyPad.prototype.update = function(dt) {
-
-    // You should multiply any movement by the dt parameter
-    // which will ensure the game runs at the same speed for
-    // all computers.
-    this.x += ((this.direction === 0) ? this.speed : -this.speed) * dt;
-    
-    // Once the log reaches either end of the board, reset it's x position
-    if (this.x > BOARD_WIDTH || this.x < 0 - COL_WIDTH) {
-        this.x = (this.direction == 0) ? -COL_WIDTH : (COL_WIDTH * NUM_COLS);
-    }
-
-};
-
-LilyPad.prototype.ride = function(player, dt) {
-    player.riding = true;
-    player.x = this.x;
-};
-
-
-/**
- * Rock class. Rocks don't move, they just prevent
- * a player from advancing. These will only appear
- * on the grass rows.
+ * Obstacle class. Objects such as rocks that don't move, 
+ * they just prevent a player from advancing. These will 
+ * only appear on the grass rows.
  */
-var Rock = function(srcX, srcY, row, xPos) {
+var Obstacle = function(srcX, srcY, row, xPos) {
     // Call the superclass constructor
     GameObject.call(this);
 
@@ -622,10 +643,10 @@ var Rock = function(srcX, srcY, row, xPos) {
     this.x = xPos;
     this.y = (row * ROW_HEIGHT);
     this.row = row;
-}
+};
 
-Rock.prototype = Object.create(GameObject.prototype); 
-Rock.prototype.constructor = Rock;
+Obstacle.prototype = Object.create(GameObject.prototype); 
+Obstacle.prototype.constructor = Obstacle;
 
 
 /**
@@ -809,23 +830,23 @@ var collectibles = [
  * Create instances of all the collectibles and add them to
  * the static allCollectibles array
  */
-for (var i = 0; i <  collectibles.length; i++) {
+// for (var i = 0; i <  collectibles.length; i++) {
     
-    var col = new Collectible(
-                    collectibles[i].id,
-                    collectibles[i].srcX,
-                    collectibles[i].srcY,
-                    collectibles[i].points
-                    );
+//     var col = new Collectible(
+//                     collectibles[i].id,
+//                     collectibles[i].srcX,
+//                     collectibles[i].srcY,
+//                     collectibles[i].points
+//                     );
     
-    // Store the object in the static allCollectibles array
-    Collectible.allCollectibles.push(col);
+//     // Store the object in the static allCollectibles array
+//     Collectible.allCollectibles.push(col);
     
-    // Call the static reset() method to redraw and reposition
-    // all of the collectibles simultaneously
-    Collectible.reset();
+//     // Call the static reset() method to redraw and reposition
+//     // all of the collectibles simultaneously
+//     Collectible.reset();
 
-}
+// }
 
 /**
  * Place all enemy objects in an array called allEnemies
@@ -851,24 +872,59 @@ allEnemies[5] = new Viper(0, 183);
 allEnemies[6] = new Ambulance(0, 233);
 allEnemies[7] = new Truck(0, 83);
 
+/**
+ * Create an array of predators. Predators are objects
+ * such as snakes, raccoons etc. which can kill our player
+ */
+var allPredators = [];
+allPredators[0] = new Predator(303, 283);
+allPredators[1] = new Predator(101, 283);
+allPredators[2] = new Predator(101, 283);
+allPredators[3] = new Predator(303, 283);
+allPredators[4] = new Predator(202, 283);
 
+
+
+/** 
+ * A Map of locations where floatable objects reside on the water rows
+ */
 var waterMap = [
     ['log', 'lilypad', 'space', 'lilypad', 'space', 'log', 'log', 'space'],
     ['lilypad', 'space', 'lilypad', 'space', 'lilypad', 'space', 'lilypad', 'space'],
     ['log', 'space', 'lilypad', 'lilypad', 'space', 'log', 'log', 'space'],
 ];
 
+
+/** 
+ * Create an array of Floatable objects (Logs, Lilypads etc)
+ */
 var allWaterObs = [];
+var floatable;
+
 for (var i=0; i<waterMap.length; i++) {
     for (var j=0; j<waterMap[i].length; j++) {
+        // Check the array for logs or lilypads and create new Floatabl objects
         if (waterMap[i][j] === 'log') {
-            allWaterObs.push(new Log(202, 0, i, (j + 1) * COL_WIDTH));
+            allWaterObs.push(new Floatable(202, 0, i, (j + 1) * COL_WIDTH));
         } else if (waterMap[i][j] === 'lilypad') {
-            allWaterObs.push(new LilyPad(101, 0, i, (j + 1) * COL_WIDTH));
-        } 
+            allWaterObs.push(new Floatable(101, 0, i, (j + 1) * COL_WIDTH));
+        }
     }
 }
 
+// Now that we have an array of all floatable object, let's place
+// some predators on some of them. Well take 3 random predators from
+// the predators array and assign them to a floatable
+var randPredIdxs = getRandNums(3, allPredators.length);
+var randWaterObIdxs = getRandNums(3, allWaterObs.length);
+for (var i=0; i<randWaterObIdxs.length; i++) {
+    allWaterObs[randWaterObIdxs[i]].addPredator(allPredators[randPredIdxs[i]]);
+}
+
+
+// Array of rock obstacles. 0 represents open spaces and 1 represents rocks
+// Rocks will only appear on the top and bottom grass rows so only 2 arrays
+// are required
 var rockMap = [
     [1, 0, 1, 0, 0, 0, 1, 0],
     [0, 1, 0, 0, 0, 0, 1, 0]
@@ -878,7 +934,7 @@ var allRocks = [];
 for (var i=0; i<rockMap.length; i++) {
     for (var j=0; j<rockMap[i].length; j++) {
         if (rockMap[i][j] === 1) {
-            allRocks.push(new Rock(0, 283, (i === 0) ? 0 : 7, j * COL_WIDTH));
+            allRocks.push(new Obstacle(0, 283, (i === 0) ? 0 : 7, j * COL_WIDTH));
         }
     }
 }

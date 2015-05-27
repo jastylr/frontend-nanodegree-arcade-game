@@ -1,3 +1,22 @@
+
+function getRandNums(k, n) {
+    //if (k>n) throw "k>n";
+    var selection = [];
+    var sorted = [];
+    for (var i = 0; i < k; i++) {
+        var rand = Math.floor(Math.random()*(n - i));
+        for (var j = 0; j < i; j++) {
+          if (sorted[j]<=rand)
+            rand++;
+        else
+            break;
+        }
+        selection.push(rand);
+        sorted.splice(j, 0, rand);
+    }
+    return selection;
+}
+
 /*
  * Add a CSS class to the specified element
  *
