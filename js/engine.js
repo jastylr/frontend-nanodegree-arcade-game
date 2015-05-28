@@ -277,6 +277,8 @@ var Engine = (function(global) {
         
         reset();
 
+        console.log('Play Game audioBkgReady: ' + audioBkgReady);
+
         // Make sure the background music has loaded
         // and then play it
         if (audioBkgReady) {
@@ -295,6 +297,8 @@ var Engine = (function(global) {
         gameOver = true;
         audioBkg.pause();
         audioBkg.currentTime = 0;
+
+        console.log('End Game audioBkgReady: ' + audioBkgReady);
 
         hide(document.getElementById('stats'));
         show(document.getElementById('game-over'));

@@ -6,7 +6,7 @@
 
 body {
 	text-align: center;
-	background-color: #018501;
+	background-color: #fff;
 }
 
 .clearfix {
@@ -16,16 +16,16 @@ body {
 #overlay,
 #game-over, 
 #game-start {
-	margin: auto;
-	width: 808px;
-	height: 646px;
-	position: absolute;
-	top: 0;
-	left: 0;
-	right: 0;
 	bottom: 0;
-	z-index: 1;
-	display: none;
+  display: none;
+  height: 664px;
+  left: 0;
+  margin: auto;
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 808px;
+  z-index: 1;
 }
 
 #overlay {
@@ -34,9 +34,21 @@ body {
 	background: url(../images/splash-screen.jpg) no-repeat 0 0;
 }
 
+canvas {
+	left: 0;
+  margin: auto;
+  position: absolute;
+  right: 0;
+  top: 26px;
+}
+
+#msgCanvas {
+	z-index: 100;
+}
+
 #game-over,
 #game-start {
-	padding-top: 60px;
+	padding-top: 250px;
 	text-align: center;
 	color: white;
 }
@@ -80,8 +92,13 @@ body {
 }
 
 #start-btn {
-    position: relative;
-    top: 450px;
+  left: 0;
+  margin: auto;
+  position: absolute;
+  right: 0;
+  top: 500px;
+  width: 180px;
+  height: 50px;
 }
 
 #start-btn:hover {
@@ -185,8 +202,11 @@ h2 {
 }
 
 #audio-ctl {
-	position: relative;
-	z-index: 100;
+	position: absolute;
+	left: 0;
+	right: 0;
+  top: 32px;
+  z-index: 100;
 }
 
 #audio-ctl button {
