@@ -176,7 +176,7 @@ Vehicle.prototype.update = function(dt) {
     
     // Once the enemy is out of bounds, reset it's x position
     if (this.x > BOARD_WIDTH || this.x < 0 - COL_WIDTH) {
-        this.x = (this.direction == 0) ? -COL_WIDTH : BOARD_WIDTH;
+        this.x = (this.direction === 0) ? -COL_WIDTH : BOARD_WIDTH;
     }
 
 };
@@ -292,7 +292,7 @@ Predator.prototype.update = function(dt) {
     
     // Once the floatable reaches either end of the board, reset it's x position
     if (this.x > BOARD_WIDTH || this.x < 0 - COL_WIDTH) {
-        this.x = (this.direction == 0) ? -COL_WIDTH : (COL_WIDTH * NUM_COLS);
+        this.x = (this.direction === 0) ? -COL_WIDTH : (COL_WIDTH * NUM_COLS);
     }
 
 };
@@ -335,7 +335,7 @@ Floatable.prototype.update = function(dt) {
     
     // Once the floatable reaches either end of the board, reset it's x position
     if (this.x > BOARD_WIDTH || this.x < 0 - COL_WIDTH) {
-        this.x = (this.direction == 0) ? -COL_WIDTH : (COL_WIDTH * NUM_COLS);
+        this.x = (this.direction === 0) ? -COL_WIDTH : (COL_WIDTH * NUM_COLS);
     }
 
 };
@@ -484,7 +484,7 @@ Player.prototype.checkCollisions = function(dt) {
         // which means they're dead
         if (!isRiding) {
             this.score -= 25;
-            this.showMessage('You Fell in the Water! Loss of 25 points!')
+            this.showMessage('You Fell in the Water! Loss of 25 points!');
             this.die();
         }      
     }
