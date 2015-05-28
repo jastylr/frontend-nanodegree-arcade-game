@@ -7,6 +7,7 @@ Instructions:
 - **Open the index.html file in a web browser**
 - **On the main screen, press the "PLAY" button to begin the game**
 - **Use the arrows keys to move frog around the game board while avoiding cars and predators**
+- **Jump onto logs or lilypads to cross the water**
 - **When you cross the water and reach the top of the board, you will be returned to the bottom to keep playing.** 
 - **Along the way, pick up various collectible objects that appear on the game board to obtain additional points.**
 - **The game ends when you have used up all of your 3 lives.**
