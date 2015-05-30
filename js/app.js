@@ -375,11 +375,13 @@ var Player = function(srcX, srcY) {
     this.riding = false;
     this.numLives = NUM_LIVES;
     this.score = 0;
+    this.food = 0;
 
     // Private variables to store the audio for
     // moving a player around the screen and dying
     var hopSound;
     var dieSound;
+    var eatSound;
 };
 
 Player.prototype = Object.create(GameObject.prototype); 
@@ -409,7 +411,15 @@ Player.prototype.isOnWater = function() {
  */
 Player.prototype.update = function(dt) {
     
+    
     this.checkCollisions(dt);
+
+    // Check food count and if it equals 5 then
+    // add a life to the player and reset food count
+    if (this.food === 5) {
+        this.numLives++;
+        this.food = 0;
+    }
 
     if (this.x < 0) {
         this.x = 0;
@@ -430,6 +440,11 @@ Player.prototype.update = function(dt) {
 
     scoreElem.innerHTML = 'Score: ' + this.score;
     livesElem.innerHTML = 'Lives: ' + this.numLives;
+};
+
+Player.prototype.eat = function() {
+    Player.eatSound.play();
+    this.food++;
 };
 
 /**
@@ -509,6 +524,17 @@ Player.prototype.checkCollisions = function(dt) {
             break;
         }
     }
+
+    // Loop through all the flying food and check for collisions
+    for (i=0; i<allFood.length; i++) {
+        if (this.collideswith(allFood[i])) {
+            this.eat();
+            allFood[i].reset();
+            this.showMessage('You Ate Some Food!');
+            console.log('Food count: ' + this.food);
+            break;
+        }
+    }
 };
 
 /**
@@ -526,11 +552,12 @@ Player.prototype.checkCollisions = function(dt) {
  * @param resetLives - Boolean
  */
 Player.prototype.reset = function(resetLives) {
+    
     // Set the player's x position to the center of the board
     this.x = (BOARD_WIDTH / 2) - (this.width / 2);
+    
     // Set the player's y position to the bottom of the board
-    // minus the offset of the empty space in the player image
-    this.y = BOARD_HEIGHT - this.height / 2;
+    this.y = BOARD_HEIGHT - this.height;
 
     // Check if the user has any more lives and if not,
     // reset them and the score
@@ -578,7 +605,7 @@ Player.prototype.showMessage = function(message) {
  */
 Player.prototype.handleInput = function(key) {
 
-    var distanceX = this.width;
+    var distanceX = this.width / 2;
     var distanceY;
     var playSound = false; 
 
@@ -632,9 +659,19 @@ Player.loadAudio = (function() {
     audioDie.loop = false;
 
     // Make sure the audio can be played and then assign it
-    // to the hopSound property
+    // to the dieSound property
     audioDie.addEventListener('canplaythrough', function() {
         Player.dieSound = audioDie;
+    });
+
+    var audioEat = document.createElement('audio');
+    audioEat.src = 'sounds/bonus.mp3';
+    audioEat.loop = false;
+
+    // Make sure the audio can be played and then assign it
+    // to the eatSound property
+    audioEat.addEventListener('canplaythrough', function() {
+        Player.eatSound = audioEat;
     });
 
 })();
@@ -658,6 +695,57 @@ var Obstacle = function(srcX, srcY, row, xPos) {
 
 Obstacle.prototype = Object.create(GameObject.prototype); 
 Obstacle.prototype.constructor = Obstacle;
+
+
+var Food = function(srcX, srcY) {
+    // Call the superclass constructor
+    GameObject.call(this);
+
+    this.srcX = srcX;
+    this.srcY = srcY;
+
+    this.reset();
+
+}
+
+Food.prototype = Object.create(GameObject.prototype); 
+Food.prototype.constructor = Food;
+
+/**
+ * @description - Generate a random position for the food object
+ */
+Food.prototype.getRandomPos = function() {
+    
+    var col = Math.floor(Math.random() * NUM_COLS),
+        y = -ROW_HEIGHT,
+        x = col * COL_WIDTH;
+
+    this.speed = (Math.floor(Math.random() * 5) + 1) * 100;    
+
+    this.x = x;
+    this.y = y;
+};
+
+Food.prototype.reset = function() {
+    // Get a new random position
+    this.getRandomPos();
+}
+
+/** 
+ * @description - Update an food object's position
+ * @param dt - delta time created in engine.js
+ */
+Food.prototype.update = function(dt) {
+
+    // Update the y position based based on the direction
+    this.y += this.speed * dt;
+    
+    // Once the enemy is out of bounds, reset it's x position
+    if (this.y > BOARD_HEIGHT) {
+        this.getRandomPos();
+    }
+
+};
 
 
 /**
@@ -859,12 +947,20 @@ var collectibles = [
 
 // }
 
+var player,
+    allEnemies = [],
+    allPredators = [],
+    allWaterObs = [],
+    allCollectibles = [],
+    allFood = [],
+    allRocks = [];
+
 /**
  * Place all enemy objects in an array called allEnemies
  * Place the player object in a variable called player
  * Create a Player and reset it to defaults
  */
-var player = new Player(0, 0);
+player = new Player(0, 0);
 player.reset(true);
 
 
@@ -873,7 +969,6 @@ player.reset(true);
  * position and speed and add them to the allEnemies
  * array
  */
-var allEnemies = [];
 allEnemies[0] = new Car(0, 133);
 allEnemies[1] = new Car(0, 133);
 allEnemies[2] = new Car(0, 133);
@@ -887,7 +982,6 @@ allEnemies[7] = new Truck(0, 83);
  * Create an array of predators. Predators are objects
  * such as snakes, raccoons etc. which can kill our player
  */
-var allPredators = [];
 allPredators[0] = new Predator(303, 283);
 allPredators[1] = new Predator(101, 283);
 allPredators[2] = new Predator(101, 283);
@@ -909,9 +1003,6 @@ var waterMap = [
 /** 
  * Create an array of Floatable objects (Logs, Lilypads etc)
  */
-var allWaterObs = [];
-var floatable;
-
 for (var i=0; i<waterMap.length; i++) {
     for (var j=0; j<waterMap[i].length; j++) {
         // Check the array for logs or lilypads and create new Floatabl objects
@@ -923,7 +1014,7 @@ for (var i=0; i<waterMap.length; i++) {
     }
 }
 
-// Now that we have an array of all floatable object, let's place
+// Now that we have an array of all floatable objects, let's place
 // some predators on some of them. Well take 3 random predators from
 // the predators array and assign them to a floatable
 var randPredIdxs = getRandNums(3, allPredators.length);
@@ -931,6 +1022,10 @@ var randWaterObIdxs = getRandNums(3, allWaterObs.length);
 for (var i=0; i<randWaterObIdxs.length; i++) {
     allWaterObs[randWaterObIdxs[i]].addPredator(allPredators[randPredIdxs[i]]);
 }
+
+// Add some food
+allFood[0] = new Food(0, 366);
+allFood[1] = new Food(202, 366);
 
 
 // Array of rock obstacles. 0 represents open spaces and 1 represents rocks
@@ -941,7 +1036,6 @@ var rockMap = [
     [0, 1, 0, 0, 0, 0, 1, 0]
 ];
 
-var allRocks = [];
 for (var i=0; i<rockMap.length; i++) {
     for (var j=0; j<rockMap[i].length; j++) {
         if (rockMap[i][j] === 1) {

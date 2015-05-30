@@ -23,7 +23,6 @@ var Engine = (function(global) {
      * set the canvas elements height/width and add it to the DOM.
      */
     var doc = global.document,
-        win = global.window,
         canvas = doc.createElement('canvas'),
         ctx = canvas.getContext('2d'),
         lastTime,
@@ -41,7 +40,7 @@ var Engine = (function(global) {
     doc.getElementById('wrapper').appendChild(canvas);
 
     // Setup some audio files for background music
-    audioBkg.src = 'sounds/frogger.mp3';
+    audioBkg.src = 'sounds/dp_frogger.mp3';
     audioBkg.loop = true;
     audioBkg.volume = 0.7;
     audioBkg.addEventListener("canplaythrough", function () {
@@ -79,7 +78,7 @@ var Engine = (function(global) {
          * function again as soon as the browser is able to draw another frame.
          */
 
-        requestAnimationFrame(main);
+        window.requestAnimationFrame(main);
     }
 
     /* This function does some initial setup that should only occur once,
@@ -140,7 +139,7 @@ var Engine = (function(global) {
         // See if the player has lost all their lives
         // and if not, then update the player otherwise call
         // the endGame function to end the game
-        if (player.numLives !== 0) {
+        if (!gameOver && player.numLives !== 0) {
             
             allEnemies.forEach(function(enemy) {
                 enemy.update(dt);
@@ -152,6 +151,10 @@ var Engine = (function(global) {
 
             allPredators.forEach(function(predator) {
                 predator.update(dt);
+            });
+
+            allFood.forEach(function(food) {
+                food.update(dt);
             });
 
             player.update();
@@ -206,8 +209,9 @@ var Engine = (function(global) {
             }
         }
 
-
-        renderEntities();
+        if (!gameOver) {
+            renderEntities();
+        }
     }
 
     /* This function is called by the render function and is called on each game
@@ -237,6 +241,10 @@ var Engine = (function(global) {
 
         allPredators.forEach(function(predator) {
             predator.render(ctx);
+        });
+
+        allFood.forEach(function(food) {
+            food.render(ctx);
         });
 
         player.render(ctx);
@@ -287,7 +295,7 @@ var Engine = (function(global) {
 
         // Store the return Id from requestAnimationFrame so that it
         // can be cancelled later
-        reqId = requestAnimationFrame(main);
+        reqId = window.requestAnimationFrame(main);
         main();
     }
 
@@ -295,10 +303,10 @@ var Engine = (function(global) {
      * game over overlay
      */
     function endGame() {
-        // Cancel the animation frame
-        console.log(reqId);
-        cancelAnimationFrame(reqId);
         gameOver = true;
+        // Cancel the animation frame
+        window.cancelAnimationFrame(reqId);
+        
         audioBkg.pause();
         audioBkg.currentTime = 0;
 
