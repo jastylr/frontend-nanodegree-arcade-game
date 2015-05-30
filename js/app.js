@@ -1,19 +1,5 @@
 'use strict';
 
-// Setup some constants used throughout the code
-const COL_WIDTH = 101;
-const ROW_HEIGHT = 83;
-const NUM_ROWS = 8;
-const NUM_COLS = 8;
-const BOARD_WIDTH = NUM_COLS * COL_WIDTH;
-const BOARD_HEIGHT = NUM_ROWS * ROW_HEIGHT;
-const ROAD_HEIGHT = 64;
-const XTOL = 40;
-const YTOL = 40;
-const NUM_ENEMIES = 7;
-const ENEMY_HEIGHT = 50;
-const NUM_LIVES = 3;
-
 /**
  * @description - Base class for all game entities.
  * @constructor
@@ -25,6 +11,9 @@ const NUM_LIVES = 3;
  * @param height - The height of the object's image.
  */ 
  var GameObject = function() {
+
+    // Assign the image sprite sheet that is used
+    // for all the game objects
     this.sprite = 'images/sprite-sheet.png';
     
     // Initialize to some default values which will be overriden
@@ -32,11 +21,66 @@ const NUM_LIVES = 3;
     this.name = 'GameObject'; // Inherited classes will have specific names
     this.srcX = 0; // X coordinate of the image in the sprite sheet
     this.srcY = 0; // Y coordinate of the image in the sprite sheet
-    this.x = -COL_WIDTH; // Initial X coordinate off to the left of the canvas
-    this.y = -ROW_HEIGHT; // Initial Y coordinate off to the top of the canvas
-    this.width = COL_WIDTH; // Set the initial object width to be the column width
-    this.height = ROW_HEIGHT; // Set the initial object height to the the row height
+    this.x = -GameObject.constants.COL_WIDTH; // Initial X coordinate off to the left of the canvas
+    this.y = -GameObject.constants.ROW_HEIGHT; // Initial Y coordinate off to the top of the canvas
+    this.width = GameObject.constants.COL_WIDTH; // Set the initial object width to be the column width
+    this.height = GameObject.constants.ROW_HEIGHT; // Set the initial object height to the the row height
 };
+
+// Setup some constants used throughout the code.
+// Note: Originally these were defined using the "const" keyword 
+// but this is not supported in all versions of Javascript and will
+// cause an error when using 'strict' mode, therefore I'm
+// defining properties as part of the GameObject using defineProperty
+GameObject.constants = {};
+
+Object.defineProperty(GameObject.constants, "COL_WIDTH", {
+    value: 101
+});
+
+Object.defineProperty(GameObject.constants, "ROW_HEIGHT", {
+    value: 83
+});
+
+Object.defineProperty(GameObject.constants, "NUM_ROWS", {
+    value: 8
+});
+
+Object.defineProperty(GameObject.constants, "NUM_COLS", {
+    value: 8
+});
+
+Object.defineProperty(GameObject.constants, "BOARD_WIDTH", {
+    value: GameObject.constants.NUM_COLS * GameObject.constants.COL_WIDTH
+});
+
+Object.defineProperty(GameObject.constants, "BOARD_HEIGHT", {
+    value: GameObject.constants.NUM_ROWS * GameObject.constants.ROW_HEIGHT
+});
+
+Object.defineProperty(GameObject.constants, "ROAD_HEIGHT", {
+    value: 64
+});
+
+Object.defineProperty(GameObject.constants, "XTOL", {
+    value: 40
+});
+
+Object.defineProperty(GameObject.constants, "YTOL", {
+    value: 40
+});
+
+Object.defineProperty(GameObject.constants, "NUM_ENEMIES", {
+    value: 7
+});
+
+Object.defineProperty(GameObject.constants, "ENEMY_HEIGHT", {
+    value: 50
+});
+
+Object.defineProperty(GameObject.constants, "NUM_LIVES", {
+    value: 3
+});
 
 /**
  * @description - Render method to display object on the canvas.
@@ -63,7 +107,7 @@ GameObject.prototype.getRow = function(tolerance) {
     // provided otherwise set it to 0.
     tolerance = typeof tolerance !== 'undefined' ? tolerance : 0;
     
-    return Math.abs(Math.floor((this.y + tolerance) / ROW_HEIGHT));
+    return Math.abs(Math.floor((this.y + tolerance) / GameObject.constants.ROW_HEIGHT));
 };
 
 
@@ -111,7 +155,7 @@ var Vehicle = function(srcX, srcY) {
     // the srcX value to grab the image just to the right
     // of it in the sprite sheet
     if (this.direction === 1) {
-        srcX += COL_WIDTH;
+        srcX += GameObject.constants.COL_WIDTH;
     }
 
     // // Save image sprite source location and the x and y position
@@ -123,7 +167,7 @@ var Vehicle = function(srcX, srcY) {
 
     // Vehicles have a different height than other game objects
     // so override it here
-    this.height = ENEMY_HEIGHT;
+    this.height = GameObject.constants.ENEMY_HEIGHT;
     
 };
 
@@ -140,15 +184,15 @@ Vehicle.prototype.getRandomPos = function() {
     var x,
         direction,
         row = Math.floor(Math.random() * 4),
-        y = (ROW_HEIGHT * 4) + (ROAD_HEIGHT * row);
+        y = (GameObject.constants.ROW_HEIGHT * 4) + (GameObject.constants.ROAD_HEIGHT * row);
 
     // Enemies on even rows go left to right,
     // odd rows go right to left
     if (row % 2 === 0) { // Even row so place the object off the left side of the canvas
-        x = -COL_WIDTH;
+        x = -GameObject.constants.COL_WIDTH;
         direction = 0;
     } else {
-        x = BOARD_WIDTH; // Odd row so place the object off the right side of the canvas
+        x = GameObject.constants.BOARD_WIDTH; // Odd row so place the object off the right side of the canvas
         direction = 1;
     }
 
@@ -175,8 +219,8 @@ Vehicle.prototype.update = function(dt) {
     this.x += ((this.direction === 0) ? this.speed : -this.speed) * dt;
     
     // Once the enemy is out of bounds, reset it's x position
-    if (this.x > BOARD_WIDTH || this.x < 0 - COL_WIDTH) {
-        this.x = (this.direction === 0) ? -COL_WIDTH : BOARD_WIDTH;
+    if (this.x > GameObject.constants.BOARD_WIDTH || this.x < 0 - GameObject.constants.COL_WIDTH) {
+        this.x = (this.direction === 0) ? -GameObject.constants.COL_WIDTH : GameObject.constants.BOARD_WIDTH;
     }
 
 };
@@ -261,8 +305,8 @@ Predator.prototype.getRandomPos = function() {
     row = availRows[Math.floor(Math.random() * availRows.length)];
     col = Math.floor(Math.random() * 8);
 
-    x = col * COL_WIDTH;
-    y = row * ROW_HEIGHT;
+    x = col * GameObject.constants.COL_WIDTH;
+    y = row * GameObject.constants.ROW_HEIGHT;
 
     // If the predator is on a water row, then set it's
     // speed and direction
@@ -291,8 +335,10 @@ Predator.prototype.update = function(dt) {
     this.x += ((this.direction === 0) ? this.speed : -this.speed) * dt;
     
     // Once the floatable reaches either end of the board, reset it's x position
-    if (this.x > BOARD_WIDTH || this.x < 0 - COL_WIDTH) {
-        this.x = (this.direction === 0) ? -COL_WIDTH : (COL_WIDTH * NUM_COLS);
+    if (this.x > GameObject.constants.BOARD_WIDTH || this.x < 0 - GameObject.constants.COL_WIDTH) {
+        this.x = (this.direction === 0) ? 
+                -GameObject.constants.COL_WIDTH : 
+                (GameObject.constants.COL_WIDTH * GameObject.constants.NUM_COLS);
     }
 
 };
@@ -314,7 +360,7 @@ var Floatable = function(srcX, srcY, row, xPos) {
     this.srcY = srcY;
     
     this.x = xPos;
-    this.y = (row * ROW_HEIGHT) + ROW_HEIGHT;
+    this.y = (row * GameObject.constants.ROW_HEIGHT) + GameObject.constants.ROW_HEIGHT;
     this.row = row;
     this.direction = (this.row % 2 === 0) ? 0 : 1;
 
@@ -334,8 +380,10 @@ Floatable.prototype.update = function(dt) {
     this.x += ((this.direction === 0) ? this.speed : -this.speed) * dt;
     
     // Once the floatable reaches either end of the board, reset it's x position
-    if (this.x > BOARD_WIDTH || this.x < 0 - COL_WIDTH) {
-        this.x = (this.direction === 0) ? -COL_WIDTH : (COL_WIDTH * NUM_COLS);
+    if (this.x > GameObject.constants.BOARD_WIDTH || this.x < 0 - GameObject.constants.COL_WIDTH) {
+        this.x = (this.direction === 0) ? 
+                -GameObject.constants.COL_WIDTH : 
+                (GameObject.constants.COL_WIDTH * GameObject.constants.NUM_COLS);
     }
 
 };
@@ -373,7 +421,7 @@ var Player = function(srcX, srcY) {
     this.srcY = srcY;
     this.speed = 1;
     this.riding = false;
-    this.numLives = NUM_LIVES;
+    this.numLives = GameObject.constants.NUM_LIVES;
     this.score = 0;
     this.food = 0;
 
@@ -392,9 +440,9 @@ Player.prototype.constructor = Player;
  */
 Player.prototype.isOnWater = function() {
     
-    var row = this.getRow(YTOL);
+    var row = this.getRow(GameObject.constants.YTOL);
     if (row === 1 || row === 2 || row === 3) {
-        return (this.y <= row * ROW_HEIGHT);
+        return (this.y <= row * GameObject.constants.ROW_HEIGHT);
     }
 
     return false;
@@ -423,10 +471,10 @@ Player.prototype.update = function(dt) {
 
     if (this.x < 0) {
         this.x = 0;
-    } else if (this.x + this.width > BOARD_WIDTH) {
-        this.x = BOARD_WIDTH - this.width;
-    } else if (this.y >= BOARD_HEIGHT - this.height) {
-        this.y = BOARD_HEIGHT - this.height;
+    } else if (this.x + this.width > GameObject.constants.BOARD_WIDTH) {
+        this.x = GameObject.constants.BOARD_WIDTH - this.width;
+    } else if (this.y >= GameObject.constants.BOARD_HEIGHT - this.height) {
+        this.y = GameObject.constants.BOARD_HEIGHT - this.height;
     } else if (this.y <= 0) {
         // update the score and send the player
         // back to the bottom of the board
@@ -466,10 +514,10 @@ Player.prototype.collideswith = function(obj) {
     // XTOL and YTOL are space around the player that
     // is used to make collision detection more accurate
     // since there is blank space in the player image
-    return (this.x + XTOL < obj.x + obj.width &&
-       this.x + this.width - XTOL > obj.x &&
-       this.y + YTOL < obj.y + obj.height &&
-       this.height + this.y - YTOL > obj.y);
+    return (this.x + GameObject.constants.XTOL < obj.x + obj.width &&
+       this.x + this.width - GameObject.constants.XTOL > obj.x &&
+       this.y + GameObject.constants.YTOL < obj.y + obj.height &&
+       this.height + this.y - GameObject.constants.YTOL > obj.y);
         
 };
 
@@ -554,15 +602,15 @@ Player.prototype.checkCollisions = function(dt) {
 Player.prototype.reset = function(resetLives) {
     
     // Set the player's x position to the center of the board
-    this.x = (BOARD_WIDTH / 2) - (this.width / 2);
+    this.x = (GameObject.constants.BOARD_WIDTH / 2) - (this.width / 2);
     
     // Set the player's y position to the bottom of the board
-    this.y = BOARD_HEIGHT - this.height;
+    this.y = GameObject.constants.BOARD_HEIGHT - this.height;
 
     // Check if the user has any more lives and if not,
     // reset them and the score
     if (resetLives && this.numLives === 0) {
-        this.numLives = NUM_LIVES;
+        this.numLives = GameObject.constants.NUM_LIVES;
         this.score = 0;
     } 
 };
@@ -610,7 +658,7 @@ Player.prototype.handleInput = function(key) {
     var playSound = false; 
 
     if (this.getRow() === 4 || this.getRow() === 5 || this.getRow() === 6) {
-        distanceY = ROAD_HEIGHT;
+        distanceY = GameObject.constants.ROAD_HEIGHT;
     } else {
         distanceY = this.height;
     }
@@ -689,7 +737,7 @@ var Obstacle = function(srcX, srcY, row, xPos) {
     this.srcX = srcX;
     this.srcY = srcY;
     this.x = xPos;
-    this.y = (row * ROW_HEIGHT);
+    this.y = (row * GameObject.constants.ROW_HEIGHT);
     this.row = row;
 };
 
@@ -716,9 +764,9 @@ Food.prototype.constructor = Food;
  */
 Food.prototype.getRandomPos = function() {
     
-    var col = Math.floor(Math.random() * NUM_COLS),
-        y = -ROW_HEIGHT,
-        x = col * COL_WIDTH;
+    var col = Math.floor(Math.random() * GameObject.constants.NUM_COLS),
+        y = -GameObject.constants.ROW_HEIGHT,
+        x = col * GameObject.constants.COL_WIDTH;
 
     this.speed = (Math.floor(Math.random() * 5) + 1) * 100;    
 
@@ -741,7 +789,7 @@ Food.prototype.update = function(dt) {
     this.y += this.speed * dt;
     
     // Once the enemy is out of bounds, reset it's x position
-    if (this.y > BOARD_HEIGHT) {
+    if (this.y > GameObject.constants.BOARD_HEIGHT) {
         this.getRandomPos();
     }
 
@@ -1007,9 +1055,9 @@ for (var i=0; i<waterMap.length; i++) {
     for (var j=0; j<waterMap[i].length; j++) {
         // Check the array for logs or lilypads and create new Floatabl objects
         if (waterMap[i][j] === 'log') {
-            allWaterObs.push(new Floatable(202, 0, i, (j + 1) * COL_WIDTH));
+            allWaterObs.push(new Floatable(202, 0, i, (j + 1) * GameObject.constants.COL_WIDTH));
         } else if (waterMap[i][j] === 'lilypad') {
-            allWaterObs.push(new Floatable(101, 0, i, (j + 1) * COL_WIDTH));
+            allWaterObs.push(new Floatable(101, 0, i, (j + 1) * GameObject.constants.COL_WIDTH));
         }
     }
 }
@@ -1039,7 +1087,7 @@ var rockMap = [
 for (var i=0; i<rockMap.length; i++) {
     for (var j=0; j<rockMap[i].length; j++) {
         if (rockMap[i][j] === 1) {
-            allRocks.push(new Obstacle(0, 283, (i === 0) ? 0 : 7, j * COL_WIDTH));
+            allRocks.push(new Obstacle(0, 283, (i === 0) ? 0 : 7, j * GameObject.constants.COL_WIDTH));
         }
     }
 }
