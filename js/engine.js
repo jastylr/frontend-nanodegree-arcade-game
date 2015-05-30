@@ -31,12 +31,14 @@ var Engine = (function(global) {
         audioBkg = doc.createElement('audio'),
         audioBkgReady = false,
         audioStart = doc.createElement('audio'),
-        muteBtn = doc.getElementById('muteBtn');
+        muteBtn = doc.getElementById('muteBtn'),
+        reqId;
         
 
+    canvas.id = 'stageID';
     canvas.width = 808;
     canvas.height = 664;
-    doc.body.appendChild(canvas);
+    doc.getElementById('wrapper').appendChild(canvas);
 
     // Setup some audio files for background music
     audioBkg.src = 'sounds/frogger.mp3';
@@ -76,7 +78,8 @@ var Engine = (function(global) {
         /* Use the browser's requestAnimationFrame function to call this
          * function again as soon as the browser is able to draw another frame.
          */
-        win.requestAnimationFrame(main);
+
+        requestAnimationFrame(main);
     }
 
     /* This function does some initial setup that should only occur once,
@@ -90,13 +93,9 @@ var Engine = (function(global) {
             playGame();
         });
 
-        document.getElementById('startover-btn').addEventListener('click', function() {
-            reset();
-            startMenu();
-        });
-
         document.getElementById('play-again').addEventListener('click', function() {
             reset();
+            playGame();
         });
 
         // This listener handles the toggle of the Mute button on the Start screen
@@ -277,8 +276,6 @@ var Engine = (function(global) {
         
         reset();
 
-        console.log('Play Game audioBkgReady: ' + audioBkgReady);
-
         // Make sure the background music has loaded
         // and then play it
         if (audioBkgReady) {
@@ -287,6 +284,10 @@ var Engine = (function(global) {
         }
 
         lastTime = Date.now();
+
+        // Store the return Id from requestAnimationFrame so that it
+        // can be cancelled later
+        reqId = requestAnimationFrame(main);
         main();
     }
 
@@ -294,11 +295,14 @@ var Engine = (function(global) {
      * game over overlay
      */
     function endGame() {
+        // Cancel the animation frame
+        console.log(reqId);
+        cancelAnimationFrame(reqId);
         gameOver = true;
         audioBkg.pause();
         audioBkg.currentTime = 0;
 
-        console.log('End Game audioBkgReady: ' + audioBkgReady);
+        audioStart.play();
 
         hide(document.getElementById('stats'));
         show(document.getElementById('game-over'));

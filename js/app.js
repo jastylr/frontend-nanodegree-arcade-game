@@ -386,19 +386,6 @@ Player.prototype = Object.create(GameObject.prototype);
 Player.prototype.constructor = Player;
 
 /**
- * @description - Get the row this player is currently on. Overriden method.
- */
-// Player.prototype.getRow = function(tolerance) {
-    
-//     // Account for some blank space in the player sprite when determining
-//     // which row the player is currently on. Check that tolerance was
-//     // provided otherwise set it to 0.
-//     tolerance = typeof tolerance !== 'undefined' ? tolerance : 0;
-    
-//     return Math.abs(Math.floor((this.y + tolerance) / ROW_HEIGHT));
-// };
-
-/**
  * Return whether the player is on a water row or not
  */
 Player.prototype.isOnWater = function() {
@@ -436,16 +423,34 @@ Player.prototype.update = function(dt) {
         this.score += 100;
         player.reset(false);
     }
+
+    // Update the score and lives text elements
+    var scoreElem = document.getElementById('score');
+    var livesElem = document.getElementById('lives');
+
+    scoreElem.innerHTML = 'Score: ' + this.score;
+    livesElem.innerHTML = 'Lives: ' + this.numLives;
 };
 
+/**
+ * @description - die method used to play die sound and reset player
+ */
 Player.prototype.die = function() {
     Player.dieSound.play();
     this.numLives--;
     this.reset(false);
 };
 
+/**
+ * @description - do rectangluar collision detection with the passed in object
+ * @param obj - the object to compare against the player for collision
+ */
 Player.prototype.collideswith = function(obj) {
 
+    // return true or false if there is a collision
+    // XTOL and YTOL are space around the player that
+    // is used to make collision detection more accurate
+    // since there is blank space in the player image
     return (this.x + XTOL < obj.x + obj.width &&
        this.x + this.width - XTOL > obj.x &&
        this.y + YTOL < obj.y + obj.height &&
@@ -453,15 +458,21 @@ Player.prototype.collideswith = function(obj) {
         
 };
 
+/**
+ * @description - check for any collisions with the player and other objects
+ * @param dt - time value for smooth animation
+ */
 Player.prototype.checkCollisions = function(dt) {
     
     var isRiding = false,
         i;
 
+    // Loop through all the enemies (Vehicles) and check
+    // for collisions. 
     for (i=0; i<allEnemies.length; i++) {
         if (this.collideswith(allEnemies[i])) {
             this.score -= allEnemies[i].points;
-            this.showMessage('You Were Hit by a Car! Loss of ' + allEnemies[i].points + ' points!');
+            this.showMessage('You Were Run Over by a Vehicle! Loss of ' + allEnemies[i].points + ' points!');
             this.die();
             break;
         }
@@ -480,8 +491,8 @@ Player.prototype.checkCollisions = function(dt) {
             } 
         }
 
-        // The player isn't on a log or lilypad so they must be in the water
-        // which means they're dead
+        // The player is on a water row but isn't on a log or lilypad 
+        // so they must have fallen into the water which means they're dead
         if (!isRiding) {
             this.score -= 25;
             this.showMessage('You Fell in the Water! Loss of 25 points!');
@@ -489,6 +500,7 @@ Player.prototype.checkCollisions = function(dt) {
         }      
     }
 
+    // Loop through all the predators and check for collisions
     for (i=0; i<allPredators.length; i++) {
         if (this.collideswith(allPredators[i])) {
             this.score -= allPredators[i].points;
@@ -541,10 +553,9 @@ Player.prototype.showMessage = function(message) {
     var alpha = 1.0;   // full opacity
     var interval;
 
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-
     interval = setInterval(function () {
-            canvas.width = canvas.width; // Clears the canvas
+            // Clears the canvas
+            ctx.clearRect(0,0,canvas.width,canvas.height);
             ctx.textAlign = 'center';
             ctx.font = "bold 20pt Arial";
             ctx.strokeStyle = "rgba(0, 0, 0, " + alpha + ")";
@@ -557,7 +568,7 @@ Player.prototype.showMessage = function(message) {
                 canvas.width = canvas.width;
                 clearInterval(interval);
             }
-        }, 200); 
+        }, 150); 
 
 };
 

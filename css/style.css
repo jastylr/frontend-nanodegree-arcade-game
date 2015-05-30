@@ -7,10 +7,18 @@
 body {
 	text-align: center;
 	background-color: #fff;
+	margin: 0;
+	padding: 0;
 }
 
 .clearfix {
 	overflow: auto;
+}
+
+#wrapper {
+	width: 808px;
+	height: 664px;
+	margin: 0 auto;
 }
 
 #overlay,
@@ -25,13 +33,13 @@ body {
   right: 0;
   top: 0;
   width: 808px;
-  z-index: 1;
 }
 
 #overlay {
 	/*background-color: black;
 	opacity: .5;*/
 	background: url(../images/splash-screen.jpg) no-repeat 0 0;
+	z-index: 100;
 }
 
 canvas {
@@ -42,7 +50,13 @@ canvas {
   top: 26px;
 }
 
+#stageID {
+	
+}
+
 #msgCanvas {
+	bottom: 80%;
+  top: 20%;
 	z-index: 100;
 }
 
@@ -51,6 +65,7 @@ canvas {
 	padding-top: 250px;
 	text-align: center;
 	color: white;
+	z-index: 100;
 }
 
 #stats {
@@ -75,17 +90,17 @@ canvas {
 }
 
 #start-btn,
-#play-again,
-#startover-btn {
-	background: none repeat scroll 0 0 transparent;
+#play-again {
+	background: green;
 	border: 3px solid #fff;
-	-webkit-border-radius: 24px;
-	-moz-border-radius: 24px;
-	border-radius: 24px;
+	-webkit-border-radius: 32px;
+	-moz-border-radius: 32px;
+	border-radius: 32px;
 	color: #fff;
 	cursor: pointer;
-	font-size: 28px;
-	padding: 4px 8px;
+	font-size: 36px;
+	height: 64px;
+	padding: 4px 15px;
 	min-width: 140px;
 	text-shadow: 2px 2px rgba(0, 0, 0, 0.5);
 	text-transform: uppercase;
@@ -98,13 +113,12 @@ canvas {
   right: 0;
   top: 500px;
   width: 180px;
-  height: 50px;
 }
 
-#start-btn:hover {
+/*#start-btn:hover {
 	color: green;
 	border-color: green;
-}
+}*/
 
 h1 {
 	font-size: 48px;
@@ -202,11 +216,13 @@ h2 {
 }
 
 #audio-ctl {
-	position: absolute;
 	left: 0;
-	right: 0;
+  margin: auto;
+  position: absolute;
+  right: 0;
   top: 32px;
-  z-index: 100;
+  width: 808px;
+  z-index: 200;
 }
 
 #audio-ctl button {
