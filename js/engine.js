@@ -159,9 +159,9 @@ var Engine = (function(global) {
 
             player.update();
 
-            Collectible.allCollectibles.forEach(function(collectible) {
-                collectible.update();
-            });
+            // Collectible.allCollectibles.forEach(function(collectible) {
+            //     collectible.update();
+            // });
         } else {
             // The player has lost all their lives so end the game
             endGame();

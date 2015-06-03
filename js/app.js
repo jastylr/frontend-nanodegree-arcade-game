@@ -18,13 +18,12 @@
     
     // Initialize to some default values which will be overriden
     // by inherited objects
-    this.name = 'GameObject'; // Inherited classes will have specific names
-    this.srcX = 0; // X coordinate of the image in the sprite sheet
-    this.srcY = 0; // Y coordinate of the image in the sprite sheet
-    this.x = -GameObject.constants.COL_WIDTH; // Initial X coordinate off to the left of the canvas
-    this.y = -GameObject.constants.ROW_HEIGHT; // Initial Y coordinate off to the top of the canvas
-    this.width = GameObject.constants.COL_WIDTH; // Set the initial object width to be the column width
-    this.height = GameObject.constants.ROW_HEIGHT; // Set the initial object height to the the row height
+    this.srcX =     0; // X coordinate of the image in the sprite sheet
+    this.srcY =     0; // Y coordinate of the image in the sprite sheet
+    this.x =        -GameObject.constants.COL_WIDTH; // Initial X coordinate off to the left of the canvas
+    this.y =        -GameObject.constants.ROW_HEIGHT; // Initial Y coordinate off to the top of the canvas
+    this.width =    GameObject.constants.COL_WIDTH; // Set the initial object width to be the column width
+    this.height =   GameObject.constants.ROW_HEIGHT; // Set the initial object height to the the row height
 };
 
 // Setup some constants used throughout the code.
@@ -298,7 +297,7 @@ Predator.prototype.getRandomPos = function() {
     
     var x, y, row, col;
 
-    // Predators are placed on any row excpet the road rows
+    // Predators are placed on the top grass row or a water row
     var availRows = [0];
 
     // Randomly choose from one of the available rows in the availRows array
@@ -316,7 +315,7 @@ Predator.prototype.getRandomPos = function() {
     }
 
     // Return an object containing the 
-    // x and y positions and the direction of travel
+    // x and y positions
     return {
         x: x,
         y: y
@@ -419,11 +418,13 @@ var Player = function(srcX, srcY) {
     
     this.srcX = srcX;
     this.srcY = srcY;
+    this.prevX = 0; // Store previous x in case we have to revert
+    this.prevY = 0; // Store previous y in case we have to revert
     this.speed = 1;
-    this.riding = false;
+    this.riding = false; // Is the player riding a water object?
     this.numLives = GameObject.constants.NUM_LIVES;
     this.score = 0;
-    this.food = 0;
+    this.food = 0; // How much food has the player eaten?
 
     // Private variables to store the audio for
     // moving a player around the screen and dying
@@ -469,6 +470,7 @@ Player.prototype.update = function(dt) {
         this.food = 0;
     }
 
+    // Make sure the player stays within the bound of our game board
     if (this.x < 0) {
         this.x = 0;
     } else if (this.x + this.width > GameObject.constants.BOARD_WIDTH) {
@@ -476,7 +478,8 @@ Player.prototype.update = function(dt) {
     } else if (this.y >= GameObject.constants.BOARD_HEIGHT - this.height) {
         this.y = GameObject.constants.BOARD_HEIGHT - this.height;
     } else if (this.y <= 0) {
-        // update the score and send the player
+        // If the player reaches the top of the game board
+        // then update the score and send the player
         // back to the bottom of the board
         this.score += 100;
         player.reset(false);
@@ -490,13 +493,16 @@ Player.prototype.update = function(dt) {
     livesElem.innerHTML = 'Lives: ' + this.numLives;
 };
 
+/**
+ * @description Update a player's food count
+ */
 Player.prototype.eat = function() {
     Player.eatSound.play();
     this.food++;
 };
 
 /**
- * @description - die method used to play die sound and reset player
+ * @description - Deduct a player's life, play die sound and reset player position
  */
 Player.prototype.die = function() {
     Player.dieSound.play();
@@ -507,17 +513,35 @@ Player.prototype.die = function() {
 /**
  * @description - do rectangluar collision detection with the passed in object
  * @param obj - the object to compare against the player for collision
+ * @param tolerance - accounts for blank space in an object image to use for collision
  */
-Player.prototype.collideswith = function(obj) {
+Player.prototype.collideswith = function(obj, xTol, yTol) {
 
-    // return true or false if there is a collision
-    // XTOL and YTOL are space around the player that
+    // Return true or false if there is a collision with the supplied object
+    // The tolerance accounts for space around the player that
     // is used to make collision detection more accurate
-    // since there is blank space in the player image
-    return (this.x + GameObject.constants.XTOL < obj.x + obj.width &&
-       this.x + this.width - GameObject.constants.XTOL > obj.x &&
-       this.y + GameObject.constants.YTOL < obj.y + obj.height &&
-       this.height + this.y - GameObject.constants.YTOL > obj.y);
+    // since there is blank space object images
+    xTol = (typeof xTol === 'undefined') ? this.width / 2 : xTol;
+    yTol = (typeof yTol === 'undefined') ? this.height / 2 : yTol;
+
+    return (this.x + xTol < obj.x + obj.width &&
+           this.x + this.width - xTol > obj.x &&
+           this.y + yTol < obj.y + obj.height &&
+           this.height + this.y - yTol > obj.y);
+
+    // return (this.x <= rect.x + rect.width &&
+    //             rect.x <= this.x + this.width &&
+    //             this.y <= rect.y + rect.height &&
+    //             rect.y <= this.y + this.height);
+
+    // If a's bottom right x coordinate is less than b's top left x coordinate
+    //     There is no collision
+    // If a's top left x is greater than b's bottom right x
+    //     There is no collision
+    // If a's top left y is greater than b's bottom right y
+    //     There is no collision
+    // If a's bottom right y is less than b's top left y
+    //     There is no collision
         
 };
 
@@ -529,6 +553,15 @@ Player.prototype.checkCollisions = function(dt) {
     
     var isRiding = false,
         i;
+
+    // Loop through all the rock obstacles and check for collisions
+    for (i=0; i<allRocks.length; i++) {
+        if (this.collideswith(allRocks[i])) {
+            this.x = this.prevX;
+            this.y = this.prevY;
+            break;
+        }
+    }
 
     // Loop through all the enemies (Vehicles) and check
     // for collisions. 
@@ -580,6 +613,15 @@ Player.prototype.checkCollisions = function(dt) {
             allFood[i].reset();
             this.showMessage('You Ate Some Food!');
             console.log('Food count: ' + this.food);
+            break;
+        }
+    }
+
+    for (i=0; i<Collectible.allCollectibles.length; i++) {
+        if (this.collideswith(Collectible.allCollectibles[i])) {
+            Collectible.allCollectibles[i].retrieve();
+            this.score += Collectible.allCollectibles[i].points;
+            this.showMessage('You Picked Up a ' + Collectible.allCollectibles[i].id + '!');
             break;
         }
     }
@@ -655,7 +697,10 @@ Player.prototype.handleInput = function(key) {
 
     var distanceX = this.width / 2;
     var distanceY;
-    var playSound = false; 
+    var playSound = false;
+
+    this.prevX = this.x;
+    this.prevY = this.y; 
 
     if (this.getRow() === 4 || this.getRow() === 5 || this.getRow() === 6) {
         distanceY = GameObject.constants.ROAD_HEIGHT;
@@ -754,7 +799,7 @@ var Food = function(srcX, srcY) {
 
     this.reset();
 
-}
+};
 
 Food.prototype = Object.create(GameObject.prototype); 
 Food.prototype.constructor = Food;
@@ -768,16 +813,19 @@ Food.prototype.getRandomPos = function() {
         y = -GameObject.constants.ROW_HEIGHT,
         x = col * GameObject.constants.COL_WIDTH;
 
-    this.speed = (Math.floor(Math.random() * 5) + 1) * 100;    
+    this.speed = (Math.floor(Math.random() * 5) + 1) * 50;    
 
     this.x = x;
     this.y = y;
 };
 
+/**
+ * @description - Get a new, random position for a food object
+ */
 Food.prototype.reset = function() {
     // Get a new random position
     this.getRandomPos();
-}
+};
 
 /** 
  * @description - Update an food object's position
@@ -806,6 +854,9 @@ Food.prototype.update = function(dt) {
  */
 var Collectible = function(id, srcX, srcY, points) {
 
+    // Call parent class constructor
+    GameObject.call(this);
+
     this.sprite = 'images/sprite-sheet.png';
     this.id = id;
     this.srcX = srcX;
@@ -826,6 +877,9 @@ var Collectible = function(id, srcX, srcY, points) {
     // a collectible is retrieved. 
     var blipSound;
 };
+
+Collectible.prototype = Object.create(GameObject.prototype); 
+Collectible.prototype.constructor = Collectible;
 
 // Setup some static properties and methods
 // Initialize the number of collectibles retrieved to 0
@@ -857,32 +911,58 @@ Collectible.reset = function() {
 Collectible.prototype.setRandomPos = function() {
 
     // Get a random row and column position
-    var randRow = Math.floor(Math.random() *  (3 + 1 - 1)) + 1; 
-    var randCol = Math.floor(Math.random() *  (4 + 1 - 0)) + 0;
-    
+    // var randRow = Math.floor(Math.random() *  (3 + 1 - 1)) + 1; 
+    // var randCol = Math.floor(Math.random() *  (4 + 1 - 0)) + 0;
+    var randRow = Math.floor(Math.random() *  8); 
+    var randCol = Math.floor(Math.random() *  8);
+
     // Set the object's x and y position based on the
     // random row and column
     this.x = randCol * this.width;
-    this.y = randRow * this.height - 98;
 
+    if (randRow === 4 || randRow === 5 || randRow === 6) {
+        this.y = (GameObject.constants.ROW_HEIGHT * 4) - (GameObject.constants.ROAD_HEIGHT * randRow);
+        console.log('Collectible on road row at x: ' + this.x + ' y: ' + this.y);
+    } else {
+        this.y = randRow * this.height;
+    }
+
+};
+
+Collectible.prototype.retrieve = function() {
+
+    // Increment the collected count
+    this.collected = true;
+    Collectible.numCollected += 1;
+     
+    // If a collectible has been retrieved then play the audio effect
+    // associated with it. We first call the pause() method on the audio
+    // and reset it's play position to the beginning of the audio file.
+    // This is done in case the audio from another collectible is already playing.
+    // Rather than waiting for the audio to finish, we start over instead
+    Collectible.blipSound.pause();
+    Collectible.blipSound.currentTime = 0;
+    Collectible.blipSound.play();
+
+    this.update();
 };
 
 /**
  * @description - Render a collectible on the canvas
  * @param ctx - A reference to the canvas context to draw on
  */
-Collectible.prototype.render = function(ctx) {
+// Collectible.prototype.render = function(ctx) {
     
-    ctx.drawImage(Resources.get(this.sprite), 
-        this.srcX, 
-        this.srcY, 
-        this.width, 
-        this.height, 
-        this.x, 
-        this.y, 
-        this.width, 
-        this.height);
-};
+//     ctx.drawImage(Resources.get(this.sprite), 
+//         this.srcX, 
+//         this.srcY, 
+//         this.width, 
+//         this.height, 
+//         this.x, 
+//         this.y, 
+//         this.width, 
+//         this.height);
+// };
 
 /**
  * Determine if a collectible has been retrieved and if so,
@@ -908,11 +988,11 @@ Collectible.prototype.update = function() {
         if (this.collected === true) {
             this.x = -101;
             this.y = -171;
-        } else {
+        }// else {
             // There are still collectibles on the board so
             // check for retrieval
-            this.checkCollected();
-        }
+            //this.checkCollected();
+        //}
     }
 };
 
@@ -966,34 +1046,32 @@ Collectible.loadAudio = (function() {
  * source x and y locations and their point values
  */
 var collectibles = [
-    {id: 'star', srcX: 0, srcY: 342, points: 100},
-    {id: 'key', srcX: 101, srcY: 342, points: 75},
-    {id: 'heart', srcX: 202, srcY: 342, points: 50},
-    {id: 'green-gem', srcX: 303, srcY: 342, points: 25},
-    {id: 'blue-gem', srcX: 404, srcY: 342, points: 25}
+    {id: 'emerald', srcX: 0, srcY: 449, points: 100},
+    {id: 'ruby', srcX: 101, srcY: 449, points: 75},
+    {id: 'sapphire', srcX: 202, srcY: 449, points: 50}
 ];
 
 /**
  * Create instances of all the collectibles and add them to
  * the static allCollectibles array
  */
-// for (var i = 0; i <  collectibles.length; i++) {
+for (var i = 0; i <  collectibles.length; i++) {
     
-//     var col = new Collectible(
-//                     collectibles[i].id,
-//                     collectibles[i].srcX,
-//                     collectibles[i].srcY,
-//                     collectibles[i].points
-//                     );
+    var col = new Collectible(
+                    collectibles[i].id,
+                    collectibles[i].srcX,
+                    collectibles[i].srcY,
+                    collectibles[i].points
+                    );
     
-//     // Store the object in the static allCollectibles array
-//     Collectible.allCollectibles.push(col);
+    // Store the object in the static allCollectibles array
+    Collectible.allCollectibles.push(col);
     
-//     // Call the static reset() method to redraw and reposition
-//     // all of the collectibles simultaneously
-//     Collectible.reset();
+    // Call the static reset() method to redraw and reposition
+    // all of the collectibles simultaneously
+    Collectible.reset();
 
-// }
+}
 
 var player,
     allEnemies = [],
@@ -1064,21 +1142,16 @@ for (var i=0; i<waterMap.length; i++) {
 
 // Now that we have an array of all floatable objects, let's place
 // some predators on some of them. Well take 3 random predators from
-// the predators array and assign them to a floatable
+// the predators array and assign them to a random floatable object
 var randPredIdxs = getRandNums(3, allPredators.length);
 var randWaterObIdxs = getRandNums(3, allWaterObs.length);
 for (var i=0; i<randWaterObIdxs.length; i++) {
     allWaterObs[randWaterObIdxs[i]].addPredator(allPredators[randPredIdxs[i]]);
 }
 
-// Add some food
-allFood[0] = new Food(0, 366);
-allFood[1] = new Food(202, 366);
-
-
 // Array of rock obstacles. 0 represents open spaces and 1 represents rocks
 // Rocks will only appear on the top and bottom grass rows so only 2 arrays
-// are required
+// are required. A player cannot advance past a rock.
 var rockMap = [
     [1, 0, 1, 0, 0, 0, 1, 0],
     [0, 1, 0, 0, 0, 0, 1, 0]
@@ -1091,6 +1164,14 @@ for (var i=0; i<rockMap.length; i++) {
         }
     }
 }
+
+// Add some food. Food consists of flying insects that the
+// player can eat to accumulate health. Once they've eaten
+// 5 pieces of food, they gain an additional life
+allFood[0] = new Food(0, 366);
+allFood[1] = new Food(202, 366);
+allFood[2] = new Food(0, 366);
+
 
 /**
  * This listens for key presses and sends the keys to your
