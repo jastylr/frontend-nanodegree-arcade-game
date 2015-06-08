@@ -3,12 +3,6 @@
 /**
  * @description - Base class for all game entities.
  * @constructor
- * @param srcX - The x coordinate of the object's image in the sprite sheet.
- * @param srcY - The x coordinate of the object's image in the sprite sheet.
- * @param xPos - The x coordinate of the image on the screen.
- * @param yPos - The y coordinate of the image on the screen.
- * @param width - The width of the object's image.
- * @param height - The height of the object's image.
  */ 
  var GameObject = function() {
 
@@ -24,6 +18,8 @@
     this.y =        -GameObject.constants.ROW_HEIGHT; // Initial Y coordinate off to the top of the canvas
     this.width =    GameObject.constants.COL_WIDTH; // Set the initial object width to be the column width
     this.height =   GameObject.constants.ROW_HEIGHT; // Set the initial object height to the the row height
+    this.col =      this.x; // Used to track the current column an object resides in
+    this.row =      this.y; // Used to track the current row an object resides in
 };
 
 // Setup some constants used throughout the code.
@@ -94,7 +90,10 @@ GameObject.prototype.render = function(ctx) {
         this.y, 
         this.width, 
         this.height);
+
 };
+
+
 
 /**
  * @description - Get the row number that the object currently resides in.
@@ -108,7 +107,6 @@ GameObject.prototype.getRow = function(tolerance) {
     
     return Math.abs(Math.floor((this.y + tolerance) / GameObject.constants.ROW_HEIGHT));
 };
-
 
 /**
  * @description - Base class representation of an Enemy.
@@ -521,27 +519,19 @@ Player.prototype.collideswith = function(obj, xTol, yTol) {
     // The tolerance accounts for space around the player that
     // is used to make collision detection more accurate
     // since there is blank space object images
-    xTol = (typeof xTol === 'undefined') ? this.width / 2 : xTol;
-    yTol = (typeof yTol === 'undefined') ? this.height / 2 : yTol;
+    xTol = (typeof xTol === 'undefined') ? this.width / 2 - 10: xTol;
+    yTol = (typeof yTol === 'undefined') ? this.height / 2 - 10 : yTol;
 
+    // Original working version
     return (this.x + xTol < obj.x + obj.width &&
            this.x + this.width - xTol > obj.x &&
            this.y + yTol < obj.y + obj.height &&
            this.height + this.y - yTol > obj.y);
 
-    // return (this.x <= rect.x + rect.width &&
-    //             rect.x <= this.x + this.width &&
-    //             this.y <= rect.y + rect.height &&
-    //             rect.y <= this.y + this.height);
-
-    // If a's bottom right x coordinate is less than b's top left x coordinate
-    //     There is no collision
-    // If a's top left x is greater than b's bottom right x
-    //     There is no collision
-    // If a's top left y is greater than b's bottom right y
-    //     There is no collision
-    // If a's bottom right y is less than b's top left y
-    //     There is no collision
+    // return (this.x + xTol <= (obj.x + obj.width) -xTol &&
+    //             obj.x + xTol <= (this.x + this.width) - xTol &&
+    //             this.y + yTol <= (obj.y + obj.height) - yTol &&
+    //             obj.y + yTol <= (this.y + this.height) - yTol);
         
 };
 
@@ -552,7 +542,8 @@ Player.prototype.collideswith = function(obj, xTol, yTol) {
 Player.prototype.checkCollisions = function(dt) {
     
     var isRiding = false,
-        i;
+        i,
+        type;
 
     // Loop through all the rock obstacles and check for collisions
     for (i=0; i<allRocks.length; i++) {
@@ -568,7 +559,18 @@ Player.prototype.checkCollisions = function(dt) {
     for (i=0; i<allEnemies.length; i++) {
         if (this.collideswith(allEnemies[i])) {
             this.score -= allEnemies[i].points;
-            this.showMessage('You Were Run Over by a Vehicle! Loss of ' + allEnemies[i].points + ' points!');
+
+            if (allEnemies[i] instanceof Viper) {
+                type = 'Viper';
+            } else if (allEnemies[i] instanceof Car) {
+                type = 'Car';
+            } else if (allEnemies[i] instanceof Ambulance) {
+                type = 'Ambulance';
+            } else if (allEnemies[i] instanceof Truck) {
+                type = 'Truck';
+            }
+
+            this.showMessage('You Were Run Over by a ' + type + '! Loss of ' + allEnemies[i].points + ' points!');
             this.die();
             break;
         }
@@ -947,22 +949,6 @@ Collectible.prototype.retrieve = function() {
     this.update();
 };
 
-/**
- * @description - Render a collectible on the canvas
- * @param ctx - A reference to the canvas context to draw on
- */
-// Collectible.prototype.render = function(ctx) {
-    
-//     ctx.drawImage(Resources.get(this.sprite), 
-//         this.srcX, 
-//         this.srcY, 
-//         this.width, 
-//         this.height, 
-//         this.x, 
-//         this.y, 
-//         this.width, 
-//         this.height);
-// };
 
 /**
  * Determine if a collectible has been retrieved and if so,
@@ -1104,6 +1090,24 @@ allEnemies[5] = new Viper(0, 183);
 allEnemies[6] = new Ambulance(0, 233);
 allEnemies[7] = new Truck(0, 83);
 
+/** 
+ * Array of rock obstacles. 0 represents open spaces and 1 represents rocks
+ * Rocks will only appear on the top and bottom grass rows so only 2 arrays
+ * are required. A player cannot advance past a rock.
+ */
+var rockMap = [
+    [1, 0, 1, 0, 0, 0, 1, 0],
+    [0, 1, 0, 0, 0, 0, 1, 0]
+];
+
+for (var i=0; i<rockMap.length; i++) {
+    for (var j=0; j<rockMap[i].length; j++) {
+        if (rockMap[i][j] === 1) {
+            allRocks.push(new Obstacle(0, 283, (i === 0) ? 0 : 7, j * GameObject.constants.COL_WIDTH));
+        }
+    }
+}
+
 /**
  * Create an array of predators. Predators are objects
  * such as snakes, raccoons etc. which can kill our player
@@ -1141,28 +1145,12 @@ for (var i=0; i<waterMap.length; i++) {
 }
 
 // Now that we have an array of all floatable objects, let's place
-// some predators on some of them. Well take 3 random predators from
-// the predators array and assign them to a random floatable object
+// some predators on some of them. Well grab 3 random predators from
+// the predators array and assign them to a one of 3 random floatable objects
 var randPredIdxs = getRandNums(3, allPredators.length);
 var randWaterObIdxs = getRandNums(3, allWaterObs.length);
 for (var i=0; i<randWaterObIdxs.length; i++) {
     allWaterObs[randWaterObIdxs[i]].addPredator(allPredators[randPredIdxs[i]]);
-}
-
-// Array of rock obstacles. 0 represents open spaces and 1 represents rocks
-// Rocks will only appear on the top and bottom grass rows so only 2 arrays
-// are required. A player cannot advance past a rock.
-var rockMap = [
-    [1, 0, 1, 0, 0, 0, 1, 0],
-    [0, 1, 0, 0, 0, 0, 1, 0]
-];
-
-for (var i=0; i<rockMap.length; i++) {
-    for (var j=0; j<rockMap[i].length; j++) {
-        if (rockMap[i][j] === 1) {
-            allRocks.push(new Obstacle(0, 283, (i === 0) ? 0 : 7, j * GameObject.constants.COL_WIDTH));
-        }
-    }
 }
 
 // Add some food. Food consists of flying insects that the

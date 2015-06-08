@@ -258,9 +258,10 @@ var Engine = (function(global) {
         // Update gameOver and make it false
         gameOver = false;
         
-        hide(document.getElementById('game-over'));
-        hide(document.getElementById('overlay'));
         hide(document.getElementById('game-start'));
+        hide(document.getElementById('game-over'));
+        hide(document.getElementById('audio-ctl'));
+        hide(document.getElementById('overlay'));
         show(document.getElementById('stats'));
         
         // Tell the Player to reset
@@ -274,9 +275,10 @@ var Engine = (function(global) {
      * game player selection overlay
      */
     function startMenu() {
-        show(document.getElementById('game-start'));
         show(document.getElementById('overlay'));
+        show(document.getElementById('game-start'));
         hide(document.getElementById('stats'));
+        
         audioStart.play();
     }
 
@@ -313,8 +315,11 @@ var Engine = (function(global) {
         audioStart.play();
 
         hide(document.getElementById('stats'));
-        show(document.getElementById('game-over'));
         show(document.getElementById('overlay'));
+        show(document.getElementById('game-over'));
+        show(document.getElementById('audio-ctl'));
+        
+        //show(document.getElementById('game-over'));
     }
 
     function show(element) {
